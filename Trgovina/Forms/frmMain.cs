@@ -38,9 +38,9 @@ namespace Trgovina
             this.BackColor = AppColors.Background;
 
             CreateTopBar();
-            CreateSidebar();
+          
             CreateContentPanel();
-
+            CreateSidebar();
             // Učitaj dashboard na start
             LoadUserControl(new DashboardControl());
 
@@ -188,7 +188,7 @@ namespace Trgovina
             int yPos = 100;
             var btnDashboard = AddNavButton("📊 Dashboard", yPos, () => LoadUserControl(new UserControls.DashboardControl()));
             yPos += 55;
-            AddNavButton("📦 Artikli", yPos, null);
+            var btnArtikli = AddNavButton("📦 Artikli", yPos, () => LoadUserControl(new UserControls.ArtikliControl()));
             yPos += 55;
             AddNavButton("🧾 Računi", yPos, null);
             yPos += 55;
