@@ -278,7 +278,7 @@ namespace Trgovina
             pnlContent = new Guna2Panel();
             pnlContent.Dock = DockStyle.Fill;
             pnlContent.FillColor = AppColors.Background;
-            pnlContent.Padding = new Padding(20);
+            pnlContent.Padding = new Padding(0);
             this.Controls.Add(pnlContent);
         }
 

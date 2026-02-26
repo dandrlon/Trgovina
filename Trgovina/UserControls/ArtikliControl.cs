@@ -310,7 +310,7 @@ namespace Trgovina.UserControls
         }
 
         // ══════════════════════════════════════════════════════════════════════════
-        //  DATA LOADING
+        //  Dohvaćanje podataka
         // ══════════════════════════════════════════════════════════════════════════
 
         private void UcitajSifarnike()
