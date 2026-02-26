@@ -190,11 +190,11 @@ namespace Trgovina
             yPos += 55;
             var btnArtikli = AddNavButton("📦 Artikli", yPos, () => LoadUserControl(new UserControls.ArtikliControl()));
             yPos += 55;
+            var btnPartneri = AddNavButton("👥 Partneri", yPos, () => LoadUserControl(new UserControls.PartneriControl()));
+            yPos += 55;
             AddNavButton("🧾 Računi", yPos, null);
             yPos += 55;
             AddNavButton("📥 Kalkulacije", yPos, null);
-            yPos += 55;
-            AddNavButton("👥 Partneri", yPos, null);
             yPos += 55;
             AddNavButton("📊 Izvještaji", yPos, null);
 

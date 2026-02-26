@@ -56,6 +56,8 @@
     <Compile Include="Data\ArtikliRepository.cs" />
     <Compile Include="Data\DatabaseHelper.cs" />
     <Compile Include="Data\Models\Artikl.cs" />
+    <Compile Include="Data\Models\Partner.cs" />
+    <Compile Include="Data\PartneriRepository.cs" />
     <Compile Include="Forms\frmArtikli.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -99,6 +101,12 @@
     </Compile>
     <Compile Include="UserControls\DashboardControl.Designer.cs">
       <DependentUpon>DashboardControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="UserControls\PartneriControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="UserControls\PartneriControl.Designer.cs">
+      <DependentUpon>PartneriControl.cs</DependentUpon>
     </Compile>
     <Compile Include="Utils\AppColors.cs" />
     <EmbeddedResource Include="Forms\frmLogin.resx">
