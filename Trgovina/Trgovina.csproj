@@ -55,9 +55,12 @@
   <ItemGroup>
     <Compile Include="Data\ArtikliRepository.cs" />
     <Compile Include="Data\DatabaseHelper.cs" />
+    <Compile Include="Data\GrupeArtikalaRepository.cs" />
+    <Compile Include="Data\JediniceMjereRepository.cs" />
     <Compile Include="Data\Models\Artikl.cs" />
     <Compile Include="Data\Models\Partner.cs" />
     <Compile Include="Data\PartneriRepository.cs" />
+    <Compile Include="Data\PDVRepository.cs" />
     <Compile Include="Forms\frmArtikli.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -69,6 +72,18 @@
     </Compile>
     <Compile Include="Forms\frmBase.Designer.cs">
       <DependentUpon>frmBase.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\frmGrupaArtikala.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\frmGrupaArtikala.Designer.cs">
+      <DependentUpon>frmGrupaArtikala.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\frmJedinicaMjere.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\frmJedinicaMjere.Designer.cs">
+      <DependentUpon>frmJedinicaMjere.cs</DependentUpon>
     </Compile>
     <Compile Include="Forms\frmMain.cs">
       <SubType>Form</SubType>
@@ -87,6 +102,12 @@
     </Compile>
     <Compile Include="Forms\frmPartneri.Designer.cs">
       <DependentUpon>frmPartneri.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\frmPdvStopa.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\frmPdvStopa.Designer.cs">
+      <DependentUpon>frmPdvStopa.cs</DependentUpon>
     </Compile>
     <Compile Include="Forms\frmPostavke.cs">
       <SubType>Form</SubType>
@@ -108,11 +129,29 @@
     <Compile Include="UserControls\DashboardControl.Designer.cs">
       <DependentUpon>DashboardControl.cs</DependentUpon>
     </Compile>
+    <Compile Include="UserControls\GrupeArtikalaControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="UserControls\GrupeArtikalaControl.Designer.cs">
+      <DependentUpon>GrupeArtikalaControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="UserControls\JediniceMjereControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="UserControls\JediniceMjereControl.Designer.cs">
+      <DependentUpon>JediniceMjereControl.cs</DependentUpon>
+    </Compile>
     <Compile Include="UserControls\PartneriControl.cs">
       <SubType>UserControl</SubType>
     </Compile>
     <Compile Include="UserControls\PartneriControl.Designer.cs">
       <DependentUpon>PartneriControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="UserControls\PdvStopeControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="UserControls\PdvStopeControl.Designer.cs">
+      <DependentUpon>PdvStopeControl.cs</DependentUpon>
     </Compile>
     <Compile Include="Utils\AppColors.cs" />
     <EmbeddedResource Include="Forms\frmLogin.resx">

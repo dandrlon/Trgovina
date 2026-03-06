@@ -167,7 +167,7 @@ namespace Trgovina
             pnlSidebar.Width = 250;
             pnlSidebar.FillColor = AppColors.SidebarBackground;
 
-            // Logo panel
+            // ── Logo ──────────────────────────────────────────────────────────────────
             Guna2Panel pnlLogo = new Guna2Panel();
             pnlLogo.Size = new Size(250, 70);
             pnlLogo.Location = new Point(0, 0);
@@ -180,28 +180,47 @@ namespace Trgovina
             lblLogo.ForeColor = AppColors.TextWhite;
             lblLogo.Location = new Point(20, 22);
             lblLogo.AutoSize = true;
-
             pnlLogo.Controls.Add(lblLogo);
             pnlSidebar.Controls.Add(pnlLogo);
 
-            // Navigation buttons
-            int yPos = 100;
-            var btnDashboard = AddNavButton("📊 Dashboard", yPos, () => LoadUserControl(new UserControls.DashboardControl()));
-            yPos += 55;
-            var btnArtikli = AddNavButton("📦 Artikli", yPos, () => LoadUserControl(new UserControls.ArtikliControl()));
-            yPos += 55;
-            var btnPartneri = AddNavButton("👥 Partneri", yPos, () => LoadUserControl(new UserControls.PartneriControl()));
-            yPos += 55;
-            AddNavButton("🧾 Računi", yPos, null);
-            yPos += 55;
-            AddNavButton("📥 Kalkulacije", yPos, null);
-            yPos += 55;
-            AddNavButton("📊 Izvještaji", yPos, null);
+            // ── Navigacija ─────────────────────────────────────────────────────────────
+            int yPos = 85;
 
-            // Settings at bottom
+            var btnDashboard = AddNavButton("📊  Dashboard", yPos, () => LoadUserControl(new UserControls.DashboardControl())); yPos += 50;
+            var btnArtikli = AddNavButton("📦  Artikli", yPos, () => LoadUserControl(new UserControls.ArtikliControl())); yPos += 50;
+            var btnPartneri = AddNavButton("👥  Partneri", yPos, () => LoadUserControl(new UserControls.PartneriControl())); yPos += 50;
+            AddNavButton("🧾  Računi", yPos, null); yPos += 50;
+            AddNavButton("📥  Kalkulacije", yPos, null); yPos += 50;
+            AddNavButton("📊  Izvještaji", yPos, null); yPos += 50;
+
+            // ── Separator + naslov sekcije Šifarnici ──────────────────────────────────
+            yPos += 15;
+
+            Panel separator = new Panel();
+            separator.Size = new Size(210, 1);
+            separator.Location = new Point(20, yPos);
+            separator.BackColor = Color.FromArgb(60, 255, 255, 255); // poluprovidna bijela
+            pnlSidebar.Controls.Add(separator);
+            yPos += 18;
+
+            Label lblSifarnici = new Label();
+            lblSifarnici.Text = "ŠIFARNICI";
+            lblSifarnici.Font = new Font(AppFonts.Regular.FontFamily, 8f, FontStyle.Bold);
+            lblSifarnici.ForeColor = Color.FromArgb(160, 255, 255, 255);
+            lblSifarnici.Location = new Point(22, yPos);
+            lblSifarnici.AutoSize = true;
+            lblSifarnici.BackColor = AppColors.Primary;
+            pnlSidebar.Controls.Add(lblSifarnici);
+            yPos += 22 + 10;
+
+            AddNavButton("🗂️  Grupe artikala", yPos, () => LoadUserControl(new UserControls.GrupeArtikalaControl())); yPos += 50;
+            AddNavButton("🧾  PDV stope", yPos, () => LoadUserControl(new UserControls.PdvStopeControl())); yPos += 50;
+            AddNavButton("📐  Jedinice mjere", yPos, () => LoadUserControl(new UserControls.JediniceMjereControl())); yPos += 50;
+
+            // ── Postavke i odjava (fiksirano na dno) ──────────────────────────────────
             Guna2Button btnSettings = new Guna2Button();
-            btnSettings.Text = "⚙️ Postavke";
-            btnSettings.Size = new Size(230, 50);
+            btnSettings.Text = "⚙️  Postavke";
+            btnSettings.Size = new Size(230, 46);
             btnSettings.Location = new Point(10, 690);
             btnSettings.TextAlign = HorizontalAlignment.Left;
             btnSettings.FillColor = AppColors.Primary;
@@ -211,11 +230,10 @@ namespace Trgovina
             btnSettings.BorderRadius = 8;
             pnlSidebar.Controls.Add(btnSettings);
 
-            // Logout button - ispod postavki
             Guna2Button btnLogout = new Guna2Button();
-            btnLogout.Text = "🚪 Odjava";
-            btnLogout.Size = new Size(230, 50);
-            btnLogout.Location = new Point(10, 745);
+            btnLogout.Text = "🚪  Odjava";
+            btnLogout.Size = new Size(230, 46);
+            btnLogout.Location = new Point(10, 742);
             btnLogout.TextAlign = HorizontalAlignment.Left;
             btnLogout.FillColor = AppColors.Primary;
             btnLogout.HoverState.FillColor = AppColors.Danger;
@@ -226,9 +244,7 @@ namespace Trgovina
             btnLogout.Click += BtnLogout_Click;
             pnlSidebar.Controls.Add(btnLogout);
 
-            // Set Dashboard as active by default
             SetActiveButton(btnDashboard);
-
             this.Controls.Add(pnlSidebar);
         }
 

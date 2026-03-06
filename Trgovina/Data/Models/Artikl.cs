@@ -38,6 +38,8 @@ namespace Trgovina.Data.Models
     {
         public int Id { get; set; }
         public string Naziv { get; set; }
+
+        public string Opis { get; set; }
         public override string ToString() => Naziv;
     }
 
