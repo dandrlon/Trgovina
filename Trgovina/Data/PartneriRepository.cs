@@ -23,7 +23,7 @@ namespace Trgovina.Data
                 SELECT id, naziv, adresa, grad, postanski_broj, drzava, oib, telefon, email, kontakt_osoba, aktivan, napomena
                 FROM partneri
                 WHERE (@pretraga = '' OR naziv LIKE '%' + @pretraga + '%' OR id LIKE '%' + @pretraga + '%')
-                  AND (@aktivan IS NULL OR a.aktivan = @aktivan)
+                  AND (@aktivan IS NULL OR aktivan = @aktivan)
                 ORDER BY naziv";
 
             try
@@ -63,7 +63,7 @@ namespace Trgovina.Data
             string query = @"
                 SELECT id, naziv, adresa, grad, postanski_broj, drzava, oib, telefon, email, kontakt_osoba, aktivan, napomena
                 FROM partneri
-                WHERE a.id = @id";
+                WHERE id = @id";
 
             using (SqlConnection conn = new SqlConnection(DatabaseHelper.ConnectionString))
             {
@@ -111,8 +111,8 @@ namespace Trgovina.Data
         {
             string query = @"
                 UPDATE partneri SET
-                    naziv = @naziv, adresa = @adresa,postanski_broj = @postanski_broj
-                    drzava = @drzava, oib = @oib, telefon = @telefon, email = @email
+                    naziv = @naziv, adresa = @adresa,postanski_broj = @postanski_broj,
+                    drzava = @drzava, oib = @oib, telefon = @telefon, email = @email,
                     kontakt_osoba = @kontakt_osoba, aktivan = @aktivan, napomena = @napomena
                 WHERE id = @id";
 

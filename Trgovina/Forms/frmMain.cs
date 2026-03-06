@@ -266,7 +266,7 @@ namespace Trgovina
         {
             if (activeButton != null)
             {
-                activeButton.FillColor = Color.Transparent;
+                activeButton.FillColor = AppColors.Primary;
             }
 
             activeButton = button;

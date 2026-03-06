@@ -38,7 +38,7 @@ namespace Trgovina.Forms
 
         private void InitializeForm()
         {
-            this.Text = _editMode ? "Uredi artikal" : "Dodaj novi artikal";
+            this.Text = _editMode ? "Uredi artikl" : "Dodaj novi artikl";
             this.MaximizeBox = false;
             this.StartPosition = FormStartPosition.CenterParent;
             this.BackColor = AppColors.Background;
@@ -49,8 +49,8 @@ namespace Trgovina.Forms
 
             // Postavi visinu forme NAKON što je sadržaj kreiran
             int formHeight = _contentHeight + 20; // 20px bottom margin
-            this.Size = new Size(600, formHeight);
-            this.MinimumSize = new Size(600, formHeight);
+            this.Size = new Size(620, formHeight);
+            this.MinimumSize = new Size(620, formHeight);
         }
 
         private void KreirajSadrzaj()
@@ -63,7 +63,7 @@ namespace Trgovina.Forms
 
             // ── Naslov ────────────────────────────────────────────────────────────
             Label lblNaslov = new Label();
-            lblNaslov.Text = _editMode ? "✏️  Uredi artikal" : "➕  Novi artikal";
+            lblNaslov.Text = _editMode ? "✏️  Uredi artikl" : "➕  Novi artikl";
             lblNaslov.Font = AppFonts.TitleSmall;
             lblNaslov.ForeColor = AppColors.TextPrimary;
             lblNaslov.Location = new Point(cardX, 12);
@@ -103,30 +103,30 @@ namespace Trgovina.Forms
 
             txtSifra = DodajTextBox(card, x1, y, inputW);
             txtNaziv = DodajTextBox(card, x2, y, inputW);
-            y += inH + gap;
+            y += inH + secGap;
 
             DodajLabel(card, "Opis / napomena", x1, y);
-            y += lbH + 2;
+            y += gap;
 
             txtOpis = DodajTextBox(card, x1, y, cardW - 30);
             txtOpis.Height = 52;
             txtOpis.Multiline = true;
-            y += 52 + secGap;
+            y += 52 + inH;
 
             // SEKCIJA 2: Klasifikacija
             DodajSekcijuNaslov(card, "Klasifikacija", x1, y); y += 26;
 
             DodajLabel(card, "Grupa artikala", x1, y);
             DodajLabel(card, "Jedinica mjere", x2, y);
-            y += lbH + 2;
+            y += lbH + gap;
 
             cmbGrupa = DodajComboBox(card, x1, y, inputW);
             cmbJedinica = DodajComboBox(card, x2, y, 120);
-            y += inH + gap;
+            y += inH + secGap;
 
             DodajLabel(card, "PDV stopa", x1, y);
             DodajLabel(card, "Aktivan", x2, y);
-            y += lbH + 2;
+            y += lbH + gap;
 
             cmbPdv = DodajComboBox(card, x1, y, 160);
 
@@ -144,14 +144,14 @@ namespace Trgovina.Forms
 
             DodajLabel(card, "Cijena nabave (€)", x1, y);
             DodajLabel(card, "Cijena prodaje (€)", x2, y);
-            y += lbH + 2;
+            y -= lbH + gap + 2;
 
             txtCijenaNabave = DodajTextBox(card, x1, y, inputW);
             txtCijenaProdaje = DodajTextBox(card, x2, y, inputW);
             txtCijenaNabave.TextChanged += (s, e) => IzracunajPdv();
             txtCijenaProdaje.TextChanged += (s, e) => IzracunajPdv();
             cmbPdv.SelectedIndexChanged += (s, e) => IzracunajPdv();
-            y += inH + gap;
+            y += inH * 2 + secGap + gap;
 
             // Info redak: cijena s PDV + marža
             lblCijenaSPdv = new Label();
@@ -169,14 +169,14 @@ namespace Trgovina.Forms
             lblMarza.Location = new Point(x2, y);
             lblMarza.AutoSize = true;
             card.Controls.Add(lblMarza);
-            y += 22 + gap;
+            y += 22 + secGap;
 
             DodajLabel(card, "Količina na zalihi", x1, y);
-            y += lbH + 2;
+            y -= inH + 2;
 
             txtKolicina = DodajTextBox(card, x1, y, inputW);
             txtKolicina.Text = "0";
-            y += inH + 15; // bottom padding kartice
+            y += inH + 90; // bottom padding kartice
 
             // Postavi visinu kartice točno na sadržaj
             card.Height = y;
@@ -211,7 +211,7 @@ namespace Trgovina.Forms
             this.Controls.Add(btnOdustani);
 
             // Ukupna visina = gumbi + 10px margin
-            _contentHeight = btnY + 38 + 10;
+            _contentHeight = btnY + 38 + 30;
         }
 
         // ══════════════════════════════════════════════════════════════════════════
