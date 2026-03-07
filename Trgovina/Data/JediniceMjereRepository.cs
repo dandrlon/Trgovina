@@ -11,9 +11,9 @@ namespace Trgovina.Data
         {
             var lista = new List<JedinicaMjere>();
             string query = @"
-                SELECT id, naziv, skracenica
+                SELECT id, naziv, kratica
                 FROM jedinice_mjere
-                WHERE (@pretraga = '' OR naziv LIKE '%' + @pretraga + '%' OR skracenica LIKE '%' + @pretraga + '%')
+                WHERE (@pretraga = '' OR naziv LIKE '%' + @pretraga + '%' OR kratica LIKE '%' + @pretraga + '%')
                 ORDER BY naziv";
 
             try
@@ -36,7 +36,7 @@ namespace Trgovina.Data
 
         public static JedinicaMjere GetJedinicaById(int id)
         {
-            string query = "SELECT id, naziv, skracenica FROM jedinice_mjere WHERE id = @id";
+            string query = "SELECT id, naziv, kratica FROM jedinice_mjere WHERE id = @id";
             using (SqlConnection conn = new SqlConnection(DatabaseHelper.ConnectionString))
             {
                 conn.Open();
@@ -67,7 +67,7 @@ namespace Trgovina.Data
 
         public static bool Dodaj(JedinicaMjere j)
         {
-            string query = "INSERT INTO jedinice_mjere (naziv, skracenica) VALUES (@naziv, @skracenica)";
+            string query = "INSERT INTO jedinice_mjere (naziv, kratica) VALUES (@naziv, @kratica)";
             try
             {
                 using (SqlConnection conn = new SqlConnection(DatabaseHelper.ConnectionString))
@@ -76,7 +76,7 @@ namespace Trgovina.Data
                     using (SqlCommand cmd = new SqlCommand(query, conn))
                     {
                         cmd.Parameters.AddWithValue("@naziv", j.Naziv ?? "");
-                        cmd.Parameters.AddWithValue("@skracenica", j.Skracenica ?? "");
+                        cmd.Parameters.AddWithValue("@kratica", j.Skracenica ?? "");
                         cmd.ExecuteNonQuery();
                         return true;
                     }
@@ -87,7 +87,7 @@ namespace Trgovina.Data
 
         public static bool Azuriraj(JedinicaMjere j)
         {
-            string query = "UPDATE jedinice_mjere SET naziv = @naziv, skracenica = @skracenica WHERE id = @id";
+            string query = "UPDATE jedinice_mjere SET naziv = @naziv, kratica = @kratica WHERE id = @id";
             try
             {
                 using (SqlConnection conn = new SqlConnection(DatabaseHelper.ConnectionString))
@@ -96,7 +96,7 @@ namespace Trgovina.Data
                     using (SqlCommand cmd = new SqlCommand(query, conn))
                     {
                         cmd.Parameters.AddWithValue("@naziv", j.Naziv ?? "");
-                        cmd.Parameters.AddWithValue("@skracenica", j.Skracenica ?? "");
+                        cmd.Parameters.AddWithValue("@kratica", j.Skracenica ?? "");
                         cmd.Parameters.AddWithValue("@id", j.Id);
                         cmd.ExecuteNonQuery();
                         return true;
@@ -137,7 +137,7 @@ namespace Trgovina.Data
         {
             Id = r.GetInt32(r.GetOrdinal("id")),
             Naziv = r.GetString(r.GetOrdinal("naziv")),
-            Skracenica = r.IsDBNull(r.GetOrdinal("skracenica")) ? "" : r.GetString(r.GetOrdinal("skracenica"))
+            Skracenica = r.IsDBNull(r.GetOrdinal("kratica")) ? "" : r.GetString(r.GetOrdinal("kratica"))
         };
     }
 }

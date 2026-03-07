@@ -31,32 +31,32 @@ namespace Trgovina.Forms
             this.StartPosition = FormStartPosition.CenterParent;
             this.BackColor = AppColors.Background;
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
-            this.Size = new Size(380, 255);
+            this.Size = new Size(410, 265);
 
             this.Controls.Add(new Label { Text = _editMode ? "✏️  Uredi jedinicu mjere" : "➕  Nova jedinica mjere", Font = AppFonts.TitleSmall, ForeColor = AppColors.TextPrimary, Location = new Point(15, 12), AutoSize = true });
-            this.Controls.Add(new Panel { Height = 1, Width = 350, Location = new Point(15, 38), BackColor = AppColors.BorderLight });
+            this.Controls.Add(new Panel { Height = 1, Width = 370, Location = new Point(15, 38), BackColor = AppColors.BorderLight });
 
-            Guna2Panel card = new Guna2Panel { Location = new Point(15, 45), Size = new Size(350, 120), FillColor = AppColors.CardBackground, BorderRadius = 10 };
+            Guna2Panel card = new Guna2Panel { Location = new Point(15, 45), Size = new Size(370, 120), FillColor = AppColors.CardBackground, BorderRadius = 10 };
             card.ShadowDecoration.Enabled = true;
             card.ShadowDecoration.Depth = 6;
             this.Controls.Add(card);
 
             int y = 15;
-            DodajSekcijuNaslov(card, "Podaci o jedinici mjere", 15, y, 320); y += 26;
+            DodajSekcijuNaslov(card, "Podaci o jedinici mjere", 15, y, 330); y += 26;
 
-            DodajLabel(card, "Naziv *  (npr. Kilogram)", 15, y);
-            DodajLabel(card, "Skraćenica *  (npr. kg)", 210, y); y += 18;
+            DodajLabel(card, "Naziv * (npr. Sat)", 15, y);
+            DodajLabel(card, "Skraćenica * (npr. H)", 210, y); y += 18;
 
             txtNaziv = DodajTextBox(card, 15, y, 180);
-            txtSkracenica = DodajTextBox(card, 210, y, 120);
+            txtSkracenica = DodajTextBox(card, 210, y, 140);
 
             // Gumbi
-            btnSpremi = new Guna2Button { Text = _editMode ? "💾  Spremi izmjene" : "✔  Dodaj jedinicu", Size = new Size(160, 38), Location = new Point(15, 182), FillColor = AppColors.Primary, Font = AppFonts.RegularMedium, ForeColor = AppColors.TextWhite, BorderRadius = 8, Cursor = Cursors.Hand };
+            btnSpremi = new Guna2Button { Text = _editMode ? "💾  Spremi" : "✔  Dodaj jedinicu", Size = new Size(160, 38), Location = new Point(15, 182), FillColor = AppColors.Primary, Font = AppFonts.RegularMedium, ForeColor = AppColors.TextWhite, BorderRadius = 8, Cursor = Cursors.Hand };
             btnSpremi.HoverState.FillColor = AppColors.PrimaryLight;
             btnSpremi.Click += BtnSpremi_Click;
             this.Controls.Add(btnSpremi);
 
-            btnOdustani = new Guna2Button { Text = "✖  Odustani", Size = new Size(110, 38), Location = new Point(183, 182), FillColor = Color.FromArgb(210, 210, 215), Font = AppFonts.Regular, ForeColor = AppColors.TextPrimary, BorderRadius = 8, Cursor = Cursors.Hand };
+            btnOdustani = new Guna2Button { Text = "✖  Odustani", Size = new Size(140, 38), Location = new Point(183, 182), FillColor = Color.FromArgb(210, 210, 215), Font = AppFonts.Regular, ForeColor = AppColors.TextPrimary, BorderRadius = 8, Cursor = Cursors.Hand };
             btnOdustani.HoverState.FillColor = Color.FromArgb(190, 190, 195);
             btnOdustani.Click += (s, e) => { DialogResult = DialogResult.Cancel; Close(); };
             this.Controls.Add(btnOdustani);

@@ -31,7 +31,7 @@ namespace Trgovina.Forms
             this.StartPosition = FormStartPosition.CenterParent;
             this.BackColor = AppColors.Background;
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
-            this.Size = new Size(420, 320);
+            this.Size = new Size(480, 360);
 
             // Naslov
             Label lblNaslov = new Label();
@@ -42,13 +42,13 @@ namespace Trgovina.Forms
             lblNaslov.AutoSize = true;
             this.Controls.Add(lblNaslov);
 
-            Panel sep = new Panel { Height = 1, Width = 390, Location = new Point(15, 38), BackColor = AppColors.BorderLight };
+            Panel sep = new Panel { Height = 1, Width = 430, Location = new Point(15, 38), BackColor = AppColors.BorderLight };
             this.Controls.Add(sep);
 
             // Card
             Guna2Panel card = new Guna2Panel();
             card.Location = new Point(15, 45);
-            card.Size = new Size(390, 185);
+            card.Size = new Size(430, 205);
             card.FillColor = AppColors.CardBackground;
             card.BorderRadius = 10;
             card.ShadowDecoration.Enabled = true;
@@ -57,21 +57,20 @@ namespace Trgovina.Forms
 
             int y = 15;
 
-            DodajSekcijuNaslov(card, "Podaci o grupi", 15, y, 360); y += 26;
+            DodajSekcijuNaslov(card, "Podaci o grupi", 15, y, 390); y += 26;
 
             DodajLabel(card, "Naziv grupe *", 15, y); y += 18;
-            txtNaziv = DodajTextBox(card, 15, y, 360); y += 42;
+            txtNaziv = DodajTextBox(card, 15, y, 390); y += 52;
 
-            DodajLabel(card, "Opis / napomena", 15, y); y += 18;
-            txtOpis = DodajTextBox(card, 15, y, 360);
+            DodajLabel(card, "Opis / napomena", 15, y); y += 8;
+            txtOpis = DodajTextBox(card, 15, y, 390);
             txtOpis.Height = 52;
             txtOpis.Multiline = true;
-
             // Gumbi
             btnSpremi = new Guna2Button();
             btnSpremi.Text = _editMode ? "💾  Spremi izmjene" : "✔  Dodaj grupu";
-            btnSpremi.Size = new Size(160, 38);
-            btnSpremi.Location = new Point(15, 245);
+            btnSpremi.Size = new Size(180, 38);
+            btnSpremi.Location = new Point(15, 265);
             btnSpremi.FillColor = AppColors.Primary;
             btnSpremi.HoverState.FillColor = AppColors.PrimaryLight;
             btnSpremi.Font = AppFonts.RegularMedium;
@@ -83,8 +82,8 @@ namespace Trgovina.Forms
 
             btnOdustani = new Guna2Button();
             btnOdustani.Text = "✖  Odustani";
-            btnOdustani.Size = new Size(110, 38);
-            btnOdustani.Location = new Point(183, 245);
+            btnOdustani.Size = new Size(150, 38);
+            btnOdustani.Location = new Point(210, 265);
             btnOdustani.FillColor = Color.FromArgb(210, 210, 215);
             btnOdustani.HoverState.FillColor = Color.FromArgb(190, 190, 195);
             btnOdustani.Font = AppFonts.Regular;

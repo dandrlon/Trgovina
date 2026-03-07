@@ -14,7 +14,6 @@ namespace Trgovina.Forms
         private readonly bool _editMode;
 
         private Guna2TextBox txtNaziv, txtStopa;
-        private Label lblPreview;
         private Guna2Button btnSpremi, btnOdustani;
 
         public frmPdvStopa(Pdv pdv = null)
@@ -32,13 +31,13 @@ namespace Trgovina.Forms
             this.StartPosition = FormStartPosition.CenterParent;
             this.BackColor = AppColors.Background;
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
-            this.Size = new Size(380, 280);
+            this.Size = new Size(400, 280);
 
             Label lblNaslov = new Label { Text = _editMode ? "✏️  Uredi PDV stopu" : "➕  Nova PDV stopa", Font = AppFonts.TitleSmall, ForeColor = AppColors.TextPrimary, Location = new Point(15, 12), AutoSize = true };
             this.Controls.Add(lblNaslov);
             this.Controls.Add(new Panel { Height = 1, Width = 350, Location = new Point(15, 38), BackColor = AppColors.BorderLight });
 
-            Guna2Panel card = new Guna2Panel { Location = new Point(15, 45), Size = new Size(350, 150), FillColor = AppColors.CardBackground, BorderRadius = 10 };
+            Guna2Panel card = new Guna2Panel { Location = new Point(15, 45), Size = new Size(350, 130), FillColor = AppColors.CardBackground, BorderRadius = 10 };
             card.ShadowDecoration.Enabled = true;
             card.ShadowDecoration.Depth = 6;
             this.Controls.Add(card);
@@ -51,38 +50,18 @@ namespace Trgovina.Forms
 
             txtNaziv = DodajTextBox(card, 15, y, 160);
             txtStopa = DodajTextBox(card, 190, y, 140);
-            txtStopa.TextChanged += (s, e) => AzurirajPreview();
             y += 42;
 
-            lblPreview = new Label { Text = "", Font = AppFonts.Regular, ForeColor = AppColors.TextSecondary, Location = new Point(15, y), AutoSize = true };
-            card.Controls.Add(lblPreview);
-
             // Gumbi
-            btnSpremi = new Guna2Button { Text = _editMode ? "💾  Spremi izmjene" : "✔  Dodaj stopu", Size = new Size(155, 38), Location = new Point(15, 208), FillColor = AppColors.Primary, Font = AppFonts.RegularMedium, ForeColor = AppColors.TextWhite, BorderRadius = 8, Cursor = Cursors.Hand };
+            btnSpremi = new Guna2Button { Text = _editMode ? "💾  Spremi" : "✔  Dodaj stopu", Size = new Size(155, 38), Location = new Point(15, 188), FillColor = AppColors.Primary, Font = AppFonts.RegularMedium, ForeColor = AppColors.TextWhite, BorderRadius = 8, Cursor = Cursors.Hand };
             btnSpremi.HoverState.FillColor = AppColors.PrimaryLight;
             btnSpremi.Click += BtnSpremi_Click;
             this.Controls.Add(btnSpremi);
 
-            btnOdustani = new Guna2Button { Text = "✖  Odustani", Size = new Size(110, 38), Location = new Point(178, 208), FillColor = Color.FromArgb(210, 210, 215), Font = AppFonts.Regular, ForeColor = AppColors.TextPrimary, BorderRadius = 8, Cursor = Cursors.Hand };
+            btnOdustani = new Guna2Button { Text = "✖  Odustani", Size = new Size(150, 38), Location = new Point(178, 188), FillColor = Color.FromArgb(210, 210, 215), Font = AppFonts.Regular, ForeColor = AppColors.TextPrimary, BorderRadius = 8, Cursor = Cursors.Hand };
             btnOdustani.HoverState.FillColor = Color.FromArgb(190, 190, 195);
             btnOdustani.Click += (s, e) => { DialogResult = DialogResult.Cancel; Close(); };
             this.Controls.Add(btnOdustani);
-        }
-
-        private void AzurirajPreview()
-        {
-            if (decimal.TryParse(txtStopa.Text.Replace(',', '.'),
-                System.Globalization.NumberStyles.Any,
-                System.Globalization.CultureInfo.InvariantCulture, out decimal stopa))
-            {
-                decimal faktor = 1 + stopa / 100;
-                lblPreview.Text = $"Primjer: 100,00 € → {faktor * 100:N2} € s PDV-om";
-                lblPreview.ForeColor = AppColors.Success;
-            }
-            else
-            {
-                lblPreview.Text = "";
-            }
         }
 
         private void PopuniPolja()
