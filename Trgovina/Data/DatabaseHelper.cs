@@ -36,6 +36,21 @@ namespace Trgovina.Data
             }
         }
 
+        public static Dictionary<string, string> GetSvePostavke()
+        {
+            var dict = new Dictionary<string, string>();
+            string sql = "SELECT kljuc, vrijednost FROM postavke";
+            using (SqlConnection conn = new SqlConnection(ConnectionString))
+            using (var cmd = new SqlCommand(sql, conn))
+            {
+                conn.Open();
+                using (var rdr = cmd.ExecuteReader())
+                    while (rdr.Read())
+                        dict[rdr["kljuc"].ToString()] = rdr["vrijednost"]?.ToString() ?? "";
+            }
+            return dict;
+        }
+
         // Dohvati postavku
         public static string GetPostavka(string kljuc, string defaultValue = "")
         {

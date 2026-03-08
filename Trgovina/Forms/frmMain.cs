@@ -1,4 +1,5 @@
 ﻿using Guna.UI2.WinForms;
+using PdfSharp.Fonts;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -32,6 +33,8 @@ namespace Trgovina
 
         private void InitializeUI()
         {
+            GlobalFontSettings.UseWindowsFontsUnderWindows = true;
+
             this.Size = new Size(1400, 800);
             this.FormBorderStyle = FormBorderStyle.None;
             this.StartPosition = FormStartPosition.CenterScreen;
@@ -189,7 +192,7 @@ namespace Trgovina
             var btnDashboard = AddNavButton("📊  Dashboard", yPos, () => LoadUserControl(new UserControls.DashboardControl())); yPos += 50;
             var btnArtikli = AddNavButton("📦  Artikli", yPos, () => LoadUserControl(new UserControls.ArtikliControl())); yPos += 50;
             var btnPartneri = AddNavButton("👥  Partneri", yPos, () => LoadUserControl(new UserControls.PartneriControl())); yPos += 50;
-            AddNavButton("🧾  Računi", yPos, null); yPos += 50;
+            var btnRacuni = AddNavButton("🧾  Računi", yPos, () => LoadUserControl(new UserControls.RacuniControl())); yPos += 50;
             AddNavButton("📥  Kalkulacije", yPos, null); yPos += 50;
             AddNavButton("📊  Izvještaji", yPos, null); yPos += 50;
 

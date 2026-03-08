@@ -21,6 +21,9 @@ namespace Trgovina.Data.Models
         public bool Aktivan { get; set; } = true;
 
         public string Napomena { get; set; }
- 
+
+        public override string ToString() => Naziv;
+
     }
+
 }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using PdfSharp.Fonts;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
@@ -61,4 +62,5 @@ namespace Trgovina.Utils
         public static Font LoginTitle = new Font("Segoe UI", 24, FontStyle.Bold);
         public static Font LoginSubtitle = new Font("Segoe UI", 11, FontStyle.Regular);
     }
+
 }
