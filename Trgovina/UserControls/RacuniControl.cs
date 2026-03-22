@@ -117,26 +117,26 @@ namespace Trgovina.UserControls
 
             DodajMiniLabel(pnlToolbar, "Od:", 408, y + 7);
             dtpOd = new DateTimePicker();
-            dtpOd.Size = new Size(105, 26); dtpOd.Location = new Point(428, y + 2);
+            dtpOd.Size = new Size(105, 26); dtpOd.Location = new Point(435, y + 5);
             dtpOd.Format = DateTimePickerFormat.Short;
             dtpOd.Value = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
             dtpOd.Enabled = false;
             dtpOd.ValueChanged += (s, e) => PrimijeniFilter();
             pnlToolbar.Controls.Add(dtpOd);
 
-            DodajMiniLabel(pnlToolbar, "Do:", 540, y + 7);
+            DodajMiniLabel(pnlToolbar, "Do:", 550, y + 7);
             dtpDo = new DateTimePicker();
-            dtpDo.Size = new Size(105, 26); dtpDo.Location = new Point(560, y + 2);
+            dtpDo.Size = new Size(105, 26); dtpDo.Location = new Point(577, y + 5);
             dtpDo.Format = DateTimePickerFormat.Short;
             dtpDo.Value = DateTime.Today;
             dtpDo.Enabled = false;
             dtpDo.ValueChanged += (s, e) => PrimijeniFilter();
             pnlToolbar.Controls.Add(dtpDo);
 
-            DodajMiniLabel(pnlToolbar, "Datum:", 672, y + 7);
+            DodajMiniLabel(pnlToolbar, "Datum:", 685, y + 7);
             tglFilterDatum = new Guna2ToggleSwitch();
             tglFilterDatum.Size = new Size(46, 24);
-            tglFilterDatum.Location = new Point(716, y + 3);
+            tglFilterDatum.Location = new Point(736, y + 3);
             tglFilterDatum.Checked = false;
             tglFilterDatum.CheckedState.FillColor = AppColors.Primary;
             tglFilterDatum.UncheckedState.FillColor = AppColors.BorderLight;
@@ -150,7 +150,7 @@ namespace Trgovina.UserControls
 
             btnOsvjezi = KreirajGumb("🔄  Osvježi", AppColors.Secondary);
             btnOsvjezi.Click += (s, e) => UcitajRacune();
-            btnDodaj = KreirajGumb("➕  Novi račun", AppColors.Success);
+            btnDodaj = KreirajGumb("➕  Novi", AppColors.Success);
             btnDodaj.Click += BtnDodaj_Click;
             btnUredi = KreirajGumb("✏  Uredi", AppColors.Primary);
             btnUredi.Enabled = false;
@@ -458,8 +458,6 @@ namespace Trgovina.UserControls
             {
                 UseShellExecute = true
             });
-            //using (var f = new frmPreviewRacuna(pdfPath))
-                //f.ShowDialog();
         }
 
         private void BtnPlaceno_Click(object sender, EventArgs e)
@@ -514,7 +512,6 @@ namespace Trgovina.UserControls
             btnUredi.Enabled = sel && !_odabrani.Proknjizeno;
             btnObrisi.Enabled = sel && !_odabrani.Proknjizeno;
 
-            // Plaćeno i knjiženje su neovisne akcije
             btnPlaceno.Enabled = sel && !_odabrani.Placeno;
             btnKnjizi.Enabled = sel && !_odabrani.Proknjizeno;
         }

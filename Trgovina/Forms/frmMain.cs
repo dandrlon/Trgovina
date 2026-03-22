@@ -36,6 +36,7 @@ namespace Trgovina
             GlobalFontSettings.UseWindowsFontsUnderWindows = true;
 
             this.Size = new Size(1400, 800);
+            this.WindowState = FormWindowState.Maximized;
             this.FormBorderStyle = FormBorderStyle.None;
             this.StartPosition = FormStartPosition.CenterScreen;
             this.BackColor = AppColors.Background;
@@ -192,7 +193,7 @@ namespace Trgovina
             var btnDashboard = AddNavButton("📊  Dashboard", yPos, () => LoadUserControl(new UserControls.DashboardControl())); yPos += 50;
             var btnArtikli = AddNavButton("📦  Artikli", yPos, () => LoadUserControl(new UserControls.ArtikliControl())); yPos += 50;
             var btnPartneri = AddNavButton("👥  Partneri", yPos, () => LoadUserControl(new UserControls.PartneriControl())); yPos += 50;
-            var btnRacuni = AddNavButton("🧾  Računi", yPos, () => LoadUserControl(new UserControls.RacuniControl())); yPos += 50;
+            var btnRacuni = AddNavButton("🧾  Računi", yPos, () => LoadUserControl(new UserControls.RacuniControl())); this.WindowState = FormWindowState.Maximized; yPos += 50;
             AddNavButton("📥  Kalkulacije", yPos, null); yPos += 50;
             AddNavButton("📊  Izvještaji", yPos, null); yPos += 50;
 

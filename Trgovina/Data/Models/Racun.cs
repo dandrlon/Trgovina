@@ -32,6 +32,10 @@ namespace Trgovina.Data.Models
 
         public string Napomena { get; set; }
         public DateTime DatumKreiranja { get; set; }
+        public string OibKupca { get; set; }
+        public string AdresaKupca { get; set; }
+        public string PdvIdKupca { get; set; }
+        public DateTime? DatumIsporuke { get; set; }
 
         // Stavke (za formu)
         public List<RacunStavka> Stavke { get; set; } = new List<RacunStavka>();
@@ -56,6 +60,7 @@ namespace Trgovina.Data.Models
         public decimal IznosBezPdv { get; set; }
         public decimal IznosPdv { get; set; }
         public decimal IznosSaPdv { get; set; }
+       
 
         //helper
         public decimal CijenaPojednine => ProdajnaCijena * (1 - Popust / 100);

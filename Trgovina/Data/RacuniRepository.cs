@@ -23,10 +23,11 @@ namespace Trgovina.Data
             string sql = @"
                 SELECT r.id, r.broj_racuna, r.datum_racuna, r.datum_valute,
                        r.kupac_id, p.naziv AS naziv_kupca,
+                       p.adresa AS adresa_kupca, p.oib AS oib_kupca, p.grad AS grad_kupca, p.postanski_broj,
                        r.prodavac_id, pr.ime + ' ' + pr.prezime AS naziv_prodavaca,
                        r.ukupno_bez_pdv, r.ukupno_pdv, r.ukupno_sa_pdv,
                        r.placeno, r.datum_placanja,
-                       r.proknjizeno, r.datum_knjizenja,
+                       r.proknjizeno, r.datum_knjizenja,r.datum_isporuke,
                        r.status, r.napomena, r.datum_kreiranja
                 FROM racuni r
                 INNER JOIN partneri p   ON p.id  = r.kupac_id
@@ -72,9 +73,10 @@ namespace Trgovina.Data
             string sql = @"
                 SELECT r.id, r.broj_racuna, r.datum_racuna, r.datum_valute,
                        r.kupac_id, p.naziv AS naziv_kupca,
+                       p.adresa AS adresa_kupca, p.oib AS oib_kupca, p.grad AS grad_kupca, p.postanski_broj,
                        r.prodavac_id, pr.ime + ' ' + pr.prezime AS naziv_prodavaca,
                        r.ukupno_bez_pdv, r.ukupno_pdv, r.ukupno_sa_pdv,
-                       r.placeno, r.datum_placanja,
+                       r.placeno, r.datum_placanja, r.datum_isporuke,
                        r.proknjizeno, r.datum_knjizenja,
                        r.status, r.napomena, r.datum_kreiranja
                 FROM racuni r
@@ -458,7 +460,14 @@ namespace Trgovina.Data
                 Status = rdr["status"].ToString(),
                 Napomena = rdr["napomena"] == DBNull.Value ? null
                                     : rdr["napomena"].ToString(),
-                DatumKreiranja = rdr.GetDateTime(rdr.GetOrdinal("datum_kreiranja"))
+                DatumKreiranja = rdr.GetDateTime(rdr.GetOrdinal("datum_kreiranja")),
+                OibKupca = rdr["oib_kupca"] == DBNull.Value ? null
+                                    : rdr["oib_kupca"].ToString(),
+                AdresaKupca = rdr["adresa_kupca"].ToString(),
+                PdvIdKupca = "HR" + rdr["oib_kupca"].ToString(),
+                DatumIsporuke = rdr["datum_isporuke"] == DBNull.Value ? (DateTime?)null
+                                    : rdr.GetDateTime(rdr.GetOrdinal("datum_isporuke")),
+
             };
         }
 

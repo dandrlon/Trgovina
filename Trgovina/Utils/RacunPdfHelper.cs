@@ -4,6 +4,7 @@ using PdfSharp.Pdf;
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Windows.Forms;
 using Trgovina.Data;
 using Trgovina.Data.Models;
@@ -11,41 +12,39 @@ using Trgovina.Data.Models;
 namespace Trgovina.Utils
 {
     /// <summary>
-    /// Generira PDF račun koristeći PdfSharp 6.x.
-    /// PdfSharp 6.x koristi XFontStyleEx umjesto XFontStyle.
+    /// Generira crno-bijeli PDF račun sukladan čl. 79. Zakona o PDV-u (NN 73/13).
+    /// PdfSharp 6.x (XFontStyleEx).
     /// </summary>
     public static class RacunPdfHelper
     {
-        // ── Postavke tvrtke ───────────────────────────────────────────────────
+        // ── Default postavke tvrtke ───────────────────────────────────────────────────
         private static string _tvrtka = "Moja Trgovina d.o.o.";
         private static string _adresa = "Ulica 123, 10000 Zagreb";
         private static string _oib = "12345678901";
+        private static string _pdvId = "HR12345678901";
         private static string _telefon = "+385 1 234 5678";
         private static string _email = "info@mojatvrtka.hr";
+        private static string _iban = "HR1210010051863000160";
 
-        // ── Fontovi (PdfSharp 6.x — XFontStyleEx) ────────────────────────────
-        private static XFont FN(double size) => new XFont("Arial", size, XFontStyleEx.Regular);
-        private static XFont FB(double size) => new XFont("Arial", size, XFontStyleEx.Bold);
-        private static XFont FI(double size) => new XFont("Arial", size, XFontStyleEx.Italic);
+        // ── Fontovi ───────────────────────────────────────────────────────────
+        private static XFont FN(double s) => new XFont("Arial", s, XFontStyleEx.Regular);
+        private static XFont FB(double s) => new XFont("Arial", s, XFontStyleEx.Bold);
+        private static XFont FI(double s) => new XFont("Arial", s, XFontStyleEx.Italic);
 
-        // ── Boje ──────────────────────────────────────────────────────────────
-        private static readonly XColor cPrimary = XColor.FromArgb(67, 97, 238);
-        private static readonly XColor cHeader = XColor.FromArgb(44, 62, 80);
-        private static readonly XColor cAlt = XColor.FromArgb(248, 249, 252);
-        private static readonly XColor cBorder = XColor.FromArgb(220, 222, 235);
-        private static readonly XColor cSuccess = XColor.FromArgb(39, 174, 96);
-        private static readonly XColor cWarning = XColor.FromArgb(230, 126, 34);
-        private static readonly XColor cInfo = XColor.FromArgb(41, 128, 185);
-        private static readonly XColor cLightBg = XColor.FromArgb(235, 240, 255);
-        private static readonly XColor cGray = XColor.FromArgb(110, 110, 120);
+        // ── Crno-bijela paleta ────────────────────────────────────────────────
+        private static readonly XColor cBlack = XColors.Black;
+        private static readonly XColor cWhite = XColors.White;
+        private static readonly XColor cDark = XColor.FromArgb(30, 30, 30);  // gotovo crno
+        private static readonly XColor cMid = XColor.FromArgb(90, 90, 90);  // tamnosivo
+        private static readonly XColor cLight = XColor.FromArgb(180, 180, 180);  // okviri
+        private static readonly XColor cBg = XColor.FromArgb(245, 245, 245);  // alt redci
+        private static readonly XColor cHdrBg = XColor.FromArgb(30, 30, 30);  // header tablice
+        private static readonly XColor cTotalBg = XColor.FromArgb(30, 30, 30);  // ukupno red
 
-        // ══════════════════════════════════════════════════════════════════════
+        // ════════════════════════════════════════════════════════════════════
         //  JAVNE METODE
-        // ══════════════════════════════════════════════════════════════════════
+        // ════════════════════════════════════════════════════════════════════
 
-        /// <summary>
-        /// Otvori SaveFileDialog i spremi PDF na disk.
-        /// </summary>
         public static void SpremiPdf(Racun racun)
         {
             if (racun == null) return;
@@ -55,324 +54,464 @@ namespace Trgovina.Utils
             {
                 dlg.Title = "Spremi račun kao PDF";
                 dlg.Filter = "PDF datoteke (*.pdf)|*.pdf";
-                dlg.FileName = $"Racun_{racun.BrojRacuna.Replace("/", "-").Replace("\\", "-")}_{racun.DatumRacuna:yyyyMMdd}.pdf";
+                dlg.FileName = $"Racun_{Sanitize(racun.BrojRacuna)}_{racun.DatumRacuna:yyyyMMdd}.pdf";
                 dlg.InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-
                 if (dlg.ShowDialog() != DialogResult.OK) return;
 
                 try
                 {
                     GenerirajPdf(racun, dlg.FileName);
-
-                    if (MessageBox.Show(
-                            "PDF je uspješno spremljen.\n\nŽelite li ga otvoriti?",
-                            "Uspjeh", MessageBoxButtons.YesNo, MessageBoxIcon.Information)
-                        == DialogResult.Yes)
-                    {
+                    if (MessageBox.Show("PDF je uspješno spremljen.\n\nZelite li ga otvoriti?",
+                            "Uspjeh", MessageBoxButtons.YesNo, MessageBoxIcon.Information) == DialogResult.Yes)
                         Process.Start(new ProcessStartInfo(dlg.FileName) { UseShellExecute = true });
-                    }
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show("Greška pri generiranju PDF-a:\n" + ex.Message,
-                        "Greška", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("Greska pri generiranju PDF-a:\n" + ex.Message,
+                        "Greska", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
         }
 
-        /// <summary>
-        /// Generira PDF u temp, otvori print dialog i pošalji na pisač.
-        /// </summary>
         public static void IspisiRacun(Racun racun)
         {
             if (racun == null) return;
             UcitajPostavkeTvrtke();
-
             try
             {
-                string tempPath = Path.Combine(Path.GetTempPath(),
-                    $"racun_print_{Guid.NewGuid():N}.pdf");
-
-                GenerirajPdf(racun, tempPath);
-
+                string temp = Path.Combine(Path.GetTempPath(), $"racun_print_{Guid.NewGuid():N}.pdf");
+                GenerirajPdf(racun, temp);
                 using (var dlg = new PrintDialog())
                 {
-                    var doc = new System.Drawing.Printing.PrintDocument();
-                    doc.DocumentName = $"Račun {racun.BrojRacuna}";
-                    dlg.Document = doc;
-
+                    dlg.Document = new System.Drawing.Printing.PrintDocument
+                    { DocumentName = $"Racun {racun.BrojRacuna}" };
                     if (dlg.ShowDialog() == DialogResult.OK)
-                    {
-                        Process.Start(new ProcessStartInfo(tempPath)
-                        {
-                            Verb = "print",
-                            UseShellExecute = true,
-                            WindowStyle = ProcessWindowStyle.Hidden
-                        });
-                    }
+                        Process.Start(new ProcessStartInfo(temp)
+                        { Verb = "print", UseShellExecute = true, WindowStyle = ProcessWindowStyle.Hidden });
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Greška pri ispisu:\n" + ex.Message,
-                    "Greška", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Greska pri ispisu:\n" + ex.Message,
+                    "Greska", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
-        // ══════════════════════════════════════════════════════════════════════
-        //  GENERIRANJE PDF-a
-        // ══════════════════════════════════════════════════════════════════════
+        public static string GenerirajPdfTemp(Racun racun)
+        {
+            UcitajPostavkeTvrtke();
+            string temp = Path.Combine(Path.GetTempPath(), $"racun_preview_{Guid.NewGuid():N}.pdf");
+            GenerirajPdf(racun, temp);
+            return temp;
+        }
+
+        // ════════════════════════════════════════════════════════════════════
+        //  GENERIRANJE
+        // ════════════════════════════════════════════════════════════════════
 
         private static void GenerirajPdf(Racun racun, string putanja)
         {
-            // Enable Windows fonts (important for PdfSharp 6.x)
             GlobalFontSettings.UseWindowsFontsUnderWindows = true;
 
             var doc = new PdfDocument();
-            doc.Info.Title = $"Račun {racun.BrojRacuna}";
+            doc.Info.Title = $"Racun {racun.BrojRacuna}";
             doc.Info.Author = _tvrtka;
-            doc.Info.Subject = $"Račun za kupca {racun.NazivKupca}";
+            doc.Info.Subject = $"Racun za {racun.NazivKupca}";
 
             var page = doc.AddPage();
             page.Size = PdfSharp.PageSize.A4;
             var g = XGraphics.FromPdfPage(page);
 
-            double pw = page.Width.Point;
-            double ml = 40, mr = 40;
-            double cw = pw - ml - mr;
-            double y = ml;
+            double pw = page.Width.Point;   // 595 pt
+            double ph = page.Height.Point;  // 842 pt
+            double ml = 45, mr = 45;
+            double cw = pw - ml - mr;       // ~505 pt
+            double y = 40;
 
-            y = CrtajHeader(g, ml, y, cw, racun);
-            y = CrtajInfoBoxove(g, ml, y + 10, cw, racun);
-            y = CrtajStavke(g, ml, y + 10, cw, racun);
-            y = CrtajTotale(g, ml, y + 8, cw, racun);
+            y = CrtajNaslov(g, ml, y, cw, racun); y += 16;
+            y = CrtajStranke(g, ml, y, cw, racun); y += 14;
+            y = CrtajPodaciRacuna(g, ml, y, cw, racun); y += 14;
+            y = CrtajTablicuStavki(g, ml, y, cw, racun); y += 10;
+            y = CrtajPdvRekapitulacija(g, ml, y, cw, racun); y += 10;
+            y = CrtajTotale(g, ml, y, cw, racun); y += 12;
 
             if (!string.IsNullOrWhiteSpace(racun.Napomena))
-                CrtajNapomenu(g, ml, y + 8, cw, racun.Napomena);
+            {
+                y = CrtajNapomenu(g, ml, y, cw, racun.Napomena);
+                y += 10;
+            }
 
-            CrtajFooter(g, ml, page.Height.Point - 36, cw, racun);
+            y = CrtajUplata(g, ml, y, cw, racun);
+
+            CrtajFooter(g, ml, ph - 36, cw, racun);
 
             g.Dispose();
             doc.Save(putanja);
         }
 
-        // ══════════════════════════════════════════════════════════════════════
-        //  SEKCIJE
-        // ══════════════════════════════════════════════════════════════════════
+        // ════════════════════════════════════════════════════════════════════
+        //  1. NASLOV
+        // ════════════════════════════════════════════════════════════════════
 
-        private static double CrtajHeader(XGraphics g, double x, double y, double w, Racun racun)
+        private static double CrtajNaslov(XGraphics g, double x, double y, double w, Racun racun)
         {
-            double h = 64;
-            g.DrawRectangle(Brush(cPrimary), x, y, w, h);
+            // Debela crna linija na vrhu
+            g.DrawLine(Pen(cDark, 2.5), x, y, x + w, y);
+            y += 8;
 
-            // "RAČUN" naslov
-            g.DrawString("RAČUN", FB(22), Brush(XColors.White),
-                Rect(x + 12, y + 8, 160, 30), XStringFormats.TopLeft);
+            // "Racun" lijevo
+            g.DrawString("Racun", FB(22), Brush(cDark), Rect(x, y, 200, 30), FmtL());
 
-            // Broj računa ispod
-            g.DrawString(racun.BrojRacuna, FN(10), Brush(XColor.FromArgb(200, 230, 255)),
-                Rect(x + 12, y + 38, 220, 18), XStringFormats.TopLeft);
+            // Broj racuna desno, sivo
+            g.DrawString(racun.BrojRacuna, FN(11), Brush(cMid), Rect(x, y + 5, w, 20), FmtR());
 
-            // Tvrtka desno
-            string[] linije = { _tvrtka, $"OIB: {_oib}", _adresa, $"{_telefon}  |  {_email}" };
-            double ty = y + 6;
-            var sfDesno = new XStringFormat
+            y += 32;
+
+            // Tanka linija ispod
+            g.DrawLine(Pen(cLight, 0.6), x, y + 14, x + w, y + 14);
+
+            return y + 16;
+        }
+
+        // ════════════════════════════════════════════════════════════════════
+        //  2. PRODAVATELJ | KUPAC
+        // ════════════════════════════════════════════════════════════════════
+
+        private static double CrtajStranke(XGraphics g, double x, double y, double w, Racun racun)
+        {
+            double col = (w - 20) / 2;
+            double kx = x + col + 20;
+            double lineH = 12;
+            double gap = 12;
+
+            // ── Naslovi stupaca ──────────────────────────────────────────────
+            g.DrawString("Prodavatelj:", FB(8), Brush(cMid), Rect(x, y, col, lineH), FmtL());
+            g.DrawString("Kupac:", FB(8), Brush(cMid), Rect(kx, y, col, lineH), FmtL());
+            y += 14;
+
+            // ── Podaci prodavatelja ──────────────────────────────────────────
+            double ly = y;
+            g.DrawString(_tvrtka, FB(9), Brush(cDark), Rect(x, ly, col, lineH), FmtL()); ly += gap;
+            g.DrawString(_adresa, FN(8), Brush(cDark), Rect(x, ly, col, lineH), FmtL()); ly += gap;
+            g.DrawString("OIB: " + _oib, FN(8), Brush(cDark), Rect(x, ly, col, lineH), FmtL()); ly += gap;
+            g.DrawString("PDV ID: " + _pdvId, FN(8), Brush(cDark), Rect(x, ly, col, lineH), FmtL()); ly += gap;
+            g.DrawString(_telefon, FN(8), Brush(cDark), Rect(x, ly, col, lineH), FmtL()); ly += gap;
+            g.DrawString(_email, FN(8), Brush(cDark), Rect(x, ly, col, lineH), FmtL());
+            double maxLy = ly + lineH;
+
+            // ── Podaci kupca ─────────────────────────────────────────────────
+            double ky = y;
+            g.DrawString(racun.NazivKupca ?? "—", FB(9), Brush(cDark), Rect(kx, ky, col, lineH), FmtL()); ky += gap;
+            g.DrawString(racun.AdresaKupca ?? "—", FN(8), Brush(cDark), Rect(kx, ky, col, lineH), FmtL()); ky += gap;
+            g.DrawString("OIB: " + (racun.OibKupca ?? "—"), FN(8), Brush(cDark), Rect(kx, ky, col, lineH), FmtL()); ky += gap;
+            g.DrawString("PDV ID: " + (racun.PdvIdKupca ?? "—"), FN(8), Brush(cDark), Rect(kx, ky, col, lineH), FmtL());
+
+            // Vertikalna razdjelnica
+            double lineX = x + col + 10;
+            g.DrawLine(Pen(cLight, 0.5), lineX, y - 14, lineX, maxLy);
+
+            // Horizontalna linija ispod
+            g.DrawLine(Pen(cLight, 0.6), x, maxLy, x + w, maxLy);
+
+            return maxLy;
+        }
+
+        // ════════════════════════════════════════════════════════════════════
+        //  3. PODACI O RACUNU (datumi, prodavac)
+        // ════════════════════════════════════════════════════════════════════
+
+        private static double CrtajPodaciRacuna(XGraphics g, double x, double y, double w, Racun racun)
+        {
+            g.DrawString("Podaci o racunu:", FB(8), Brush(cMid), Rect(x, y, w, 12), FmtL());
+            y += 13;
+
+            double col = w / 4.0;
+            string[] naslovi = { "Datum racuna:", "Datum isporuke:", "Datum valute:", "Prodavac:" };
+            string[] vrijednosti =
             {
-                Alignment = XStringAlignment.Far,
-                LineAlignment = XLineAlignment.Near
+                racun.DatumRacuna.ToString("dd. MM. yyyy."),
+                (racun.DatumIsporuke ?? racun.DatumRacuna).ToString("dd. MM. yyyy."),
+                racun.DatumValute?.ToString("dd. MM. yyyy.") ?? "—",
+                racun.NazivProdavaca ?? "—"
             };
-            foreach (var l in linije)
+
+            for (int i = 0; i < 4; i++)
             {
-                g.DrawString(l, FN(8), Brush(XColors.White), Rect(x, ty, w - 10, 14), sfDesno);
-                ty += 13;
+                double cx = x + i * col;
+                g.DrawString(naslovi[i], FB(7.5), Brush(cMid), Rect(cx, y, col - 4, 11), FmtL());
+                g.DrawString(vrijednosti[i], FN(8.5), Brush(cDark), Rect(cx, y + 12, col - 4, 12), FmtL());
             }
 
-            // Status badge
-            double badgeH = 18, badgeW = 105;
-            double badgeY = y + h + 2;
-            g.DrawRectangle(Brush(StatusBoja(racun.Status)), x + w - badgeW, badgeY, badgeW, badgeH);
-            g.DrawString(racun.Status ?? "KREIRAN", FB(8), Brush(XColors.White),
-                Rect(x + w - badgeW, badgeY, badgeW, badgeH), XStringFormats.Center);
-
-            return y + h + badgeH + 4;
+            y += 26;
+            g.DrawLine(Pen(cLight, 0.6), x, y, x + w, y);
+            return y;
         }
 
-        private static double CrtajInfoBoxove(XGraphics g, double x, double y, double w, Racun racun)
+        // ════════════════════════════════════════════════════════════════════
+        //  4. TABLICA STAVKI
+        // ════════════════════════════════════════════════════════════════════
+
+        private static double CrtajTablicuStavki(XGraphics g, double x, double y, double w, Racun racun)
         {
-            double boxW = (w - 10) / 2;
-            double boxH = 90;
+            // Rbr | Sifra | Naziv | JM | Kol. | Cij.bez PDV | Pop% | PDV% | Bez PDV | S PDV
+            double[] cw = { 20, 50, 0, 28, 38, 54, 28, 28, 54, 56 };
+            double fixed_ = cw.Sum() - cw[2];
+            cw[2] = w - fixed_;
 
-            CrtajInfoBox(g, x, y, boxW, boxH, "PODACI O RAČUNU", new[]
-            {
-                ("Datum računa:", racun.DatumRacuna.ToString("dd.MM.yyyy")),
-                ("Datum valute:", racun.DatumValute?.ToString("dd.MM.yyyy") ?? "—"),
-                ("Prodavač:",     racun.NazivProdavaca ?? "—"),
-                ("Plaćeno:",      racun.Placeno ? "DA ✓" : "NE"),
-            });
+            string[] hdrs = { "Rbr", "Sifra", "Naziv artikla / usluge", "JM", "Kol.", "Cij.bez PDV", "Pop%", "PDV%", "Bez PDV EUR", "S PDV EUR" };
+            bool[] right = { false, false, false, true, true, true, true, true, true, true };
+            double hdrH = 18;
+            double rowH = 16;
 
-            CrtajInfoBox(g, x + boxW + 10, y, boxW, boxH, "KUPAC", new[]
-            {
-                ("Naziv:",    racun.NazivKupca),
-                ("",          ""),
-                ("Napomena:", string.IsNullOrWhiteSpace(racun.Napomena) ? "—" : racun.Napomena),
-            });
-
-            return y + boxH;
-        }
-
-        private static void CrtajInfoBox(XGraphics g, double x, double y, double w, double h,
-            string naslov, (string label, string value)[] redci)
-        {
-            g.DrawRectangle(Pen(cBorder, 0.6), x, y, w, h);
-            g.DrawRectangle(Brush(XColor.FromArgb(245, 246, 252)), x + 0.3, y + 0.3, w - 0.6, 18);
-            g.DrawString(naslov, FB(8), Brush(cPrimary),
-                Rect(x + 6, y + 3, w - 12, 14), XStringFormats.TopLeft);
-
-            double ry = y + 22;
-            foreach (var (label, value) in redci)
-            {
-                if (string.IsNullOrEmpty(label) && string.IsNullOrEmpty(value)) { ry += 4; continue; }
-                if (!string.IsNullOrEmpty(label))
-                    g.DrawString(label, FN(8), Brush(cGray),
-                        Rect(x + 6, ry, 82, 13), XStringFormats.TopLeft);
-                if (!string.IsNullOrEmpty(value))
-                    g.DrawString(value, FB(8.5), Brush(XColors.Black),
-                        Rect(x + 90, ry, w - 96, 13), XStringFormats.TopLeft);
-                ry += 14;
-                if (ry > y + h - 4) break;
-            }
-        }
-
-        private static double CrtajStavke(XGraphics g, double x, double y, double w, Racun racun)
-        {
-            double[] colW = { 24, 52, w - 24 - 52 - 36 - 52 - 52 - 36 - 36 - 60, 36, 52, 52, 36, 36, 60 };
-            string[] hdrs = { "Rbr", "Šifra", "Naziv", "J/M", "Kol.", "Cij. €", "Pop%", "PDV%", "S PDV €" };
-            bool[] rAlign = { false, false, false, true, true, true, true, true, true };
-
-            double rowH = 18;
-
-            // Header red
-            g.DrawRectangle(Brush(cHeader), x, y, w, rowH);
+            // Header
+            g.DrawRectangle(Brush(cHdrBg), x, y, w, hdrH);
             double cx = x;
             for (int i = 0; i < hdrs.Length; i++)
             {
-                var sf = new XStringFormat
-                {
-                    Alignment = rAlign[i] ? XStringAlignment.Far : XStringAlignment.Near,
-                    LineAlignment = XLineAlignment.Center
-                };
-                g.DrawString(hdrs[i], FB(7.5), Brush(XColors.White),
-                    Rect(cx + 2, y, colW[i] - 4, rowH), sf);
-                cx += colW[i];
+                g.DrawString(hdrs[i], FB(7), Brush(cWhite),
+                    Rect(cx + 2, y + 2, cw[i] - 4, hdrH - 4),
+                    right[i] ? FmtR() : FmtL());
+                cx += cw[i];
             }
-            y += rowH;
+            y += hdrH;
 
-            // Stavke
+            // Redci
             bool alt = false;
+            int rbr = 1;
+            int ukRedaka = 0;
             if (racun.Stavke != null)
             {
                 foreach (var s in racun.Stavke)
                 {
-                    if (alt)
-                        g.DrawRectangle(Brush(cAlt), x, y, w, rowH);
+                    if (alt) g.DrawRectangle(Brush(cBg), x, y, w, rowH);
 
-                    string naziv = s.NazivArtikla?.Length > 36
-                        ? s.NazivArtikla.Substring(0, 34) + "…"
-                        : s.NazivArtikla ?? "";
+                    decimal jedCijBezPdv = s.PdvStopa > 0
+                        ? s.ProdajnaCijena / (1 + s.PdvStopa / 100m)
+                        : s.ProdajnaCijena;
 
-                    string[] vals = {
-                        s.Rbr.ToString(),
+                    string[] vals =
+                    {
+                        rbr++.ToString(),
                         s.SifraArtikla ?? "",
-                        naziv,
+                        TruncStr(s.NazivArtikla, 40),
                         s.NazivJediniceMjere ?? "",
-                        s.Kolicina.ToString("N2"),
-                        s.ProdajnaCijena.ToString("N2"),
+                        s.Kolicina.ToString("N3"),
+                        jedCijBezPdv.ToString("N4"),
                         s.Popust > 0 ? s.Popust.ToString("N1") + "%" : "—",
                         s.PdvStopa.ToString("0") + "%",
+                        s.IznosBezPdv.ToString("N2"),
                         s.IznosSaPdv.ToString("N2")
                     };
 
                     cx = x;
                     for (int i = 0; i < vals.Length; i++)
                     {
-                        var sf = new XStringFormat
-                        {
-                            Alignment = rAlign[i] ? XStringAlignment.Far : XStringAlignment.Near,
-                            LineAlignment = XLineAlignment.Center
-                        };
-                        g.DrawString(vals[i], FN(7.5), Brush(XColors.Black),
-                            Rect(cx + 2, y, colW[i] - 4, rowH), sf);
-                        cx += colW[i];
+                        g.DrawString(vals[i], FN(7.5), Brush(cDark),
+                            Rect(cx + 2, y + 2, cw[i] - 4, rowH - 4),
+                            right[i] ? FmtR() : FmtL());
+                        cx += cw[i];
                     }
 
-                    g.DrawLine(Pen(cBorder, 0.4), x, y + rowH, x + w, y + rowH);
+                    g.DrawLine(Pen(cLight, 0.3), x, y + rowH, x + w, y + rowH);
                     y += rowH;
                     alt = !alt;
+                    ukRedaka++;
                 }
             }
+
+            // Okvir cijele tablice
+            g.DrawRectangle(Pen(cLight, 0.7), x, y - ukRedaka * rowH - hdrH,
+                w, ukRedaka * rowH + hdrH);
 
             return y;
         }
 
+        // ════════════════════════════════════════════════════════════════════
+        //  5. PDV REKAPITULACIJA
+        // ════════════════════════════════════════════════════════════════════
+
+        private static double CrtajPdvRekapitulacija(XGraphics g, double x, double y, double w, Racun racun)
+        {
+            if (racun.Stavke == null || racun.Stavke.Count == 0) return y;
+
+            var grupe = racun.Stavke
+                .GroupBy(s => s.PdvStopa)
+                .OrderBy(gr => gr.Key)
+                .Select(gr => new
+                {
+                    Stopa = gr.Key,
+                    BezPdv = gr.Sum(s => s.IznosBezPdv),
+                    PdvIzn = gr.Sum(s => s.IznosPdv),
+                    SaPdv = gr.Sum(s => s.IznosSaPdv)
+                })
+                .ToList();
+
+            g.DrawString("Podaci o PDV-u:", FB(8), Brush(cMid), Rect(x, y, w, 11), FmtL());
+            y += 12;
+
+            double[] cw = { 55, 72, 72, 72 };
+            double tw = cw.Sum();
+            double tx = x + w - tw;
+            double rh = 14;
+
+            // Header
+            string[] mh = { "PDV stopa", "Osnovica (EUR)", "Iznos PDV (EUR)", "Ukupno (EUR)" };
+            g.DrawRectangle(Brush(cHdrBg), tx, y, tw, rh);
+            double cx = tx;
+            for (int i = 0; i < mh.Length; i++)
+            {
+                g.DrawString(mh[i], FB(7), Brush(cWhite),
+                    Rect(cx + 2, y + 2, cw[i] - 4, rh - 4), FmtR());
+                cx += cw[i];
+            }
+            y += rh;
+
+            bool alt = false;
+            int ukRedaka = 0;
+            foreach (var gr in grupe)
+            {
+                if (alt) g.DrawRectangle(Brush(cBg), tx, y, tw, rh);
+
+                string[] vals =
+                {
+                    gr.Stopa.ToString("0") + " %",
+                    gr.BezPdv.ToString("N2"),
+                    gr.PdvIzn.ToString("N2"),
+                    gr.SaPdv.ToString("N2")
+                };
+                cx = tx;
+                for (int i = 0; i < vals.Length; i++)
+                {
+                    g.DrawString(vals[i], FN(7.5), Brush(cDark),
+                        Rect(cx + 2, y + 2, cw[i] - 4, rh - 4), FmtR());
+                    cx += cw[i];
+                }
+                g.DrawLine(Pen(cLight, 0.3), tx, y + rh, tx + tw, y + rh);
+                y += rh;
+                alt = !alt;
+                ukRedaka++;
+            }
+
+            g.DrawRectangle(Pen(cLight, 0.7), tx, y - ukRedaka * rh - rh, tw, ukRedaka * rh + rh);
+            return y;
+        }
+
+        // ════════════════════════════════════════════════════════════════════
+        //  6. TOTALI
+        // ════════════════════════════════════════════════════════════════════
+
         private static double CrtajTotale(XGraphics g, double x, double y, double w, Racun racun)
         {
-            double totalW = 220;
-            double tx = x + w - totalW;
-            double rh = 17;
+            double tw = 230;
+            double tx = x + w - tw;
+            double rh = 15;
 
-            TotalRed(g, tx, y, totalW, rh, "Ukupno bez PDV:", $"{racun.UkupnoBezPdv:N2} €", FN(8.5), XColors.Black);
-            TotalRed(g, tx, y + rh, totalW, rh, "PDV:", $"{racun.UkupnoPdv:N2} €", FN(8.5), XColors.Black);
+            g.DrawLine(Pen(cLight, 0.6), tx, y, tx + tw, y);
+            y += 4;
 
-            double uy = y + rh * 2 + 2;
-            g.DrawRectangle(Brush(cLightBg), tx, uy, totalW, rh + 4);
-            g.DrawRectangle(Pen(cPrimary, 0.8), tx, uy, totalW, rh + 4);
-            TotalRed(g, tx, uy + 2, totalW, rh, "UKUPNO S PDV:", $"{racun.UkupnoSaPdv:N2} €", FB(10), cPrimary);
+            TotalRed(g, tx, y, tw, rh, "Ukupno bez PDV:",
+                $"{racun.UkupnoBezPdv:N2} EUR", FN(8.5), cDark);
+            y += rh;
+            TotalRed(g, tx, y, tw, rh, "Ukupno PDV:",
+                $"{racun.UkupnoPdv:N2} EUR", FN(8.5), cDark);
+            y += rh + 3;
 
-            return uy + rh + 6;
+            // Crni pravokutnik — bijeli tekst
+            g.DrawRectangle(Brush(cTotalBg), tx, y, tw, rh + 6);
+            TotalRed(g, tx, y + 3, tw, rh, "Ukupan iznos EUR:",
+                $"{racun.UkupnoSaPdv:N2} EUR", FB(10), cWhite);
+
+            return y + rh + 10;
         }
+
+        // ════════════════════════════════════════════════════════════════════
+        //  7. NAPOMENA
+        // ════════════════════════════════════════════════════════════════════
+
+        private static double CrtajNapomenu(XGraphics g, double x, double y, double w, string napomena)
+        {
+            g.DrawString("Napomena:", FB(8), Brush(cMid), Rect(x, y, 62, 12), FmtL());
+            g.DrawString(napomena, FI(8), Brush(cDark), Rect(x + 65, y, w - 65, 12), FmtL());
+            return y + 14;
+        }
+
+        // ════════════════════════════════════════════════════════════════════
+        //  8. UPLATA
+        // ════════════════════════════════════════════════════════════════════
+
+        private static double CrtajUplata(XGraphics g, double x, double y, double w, Racun racun)
+        {
+            if (string.IsNullOrWhiteSpace(_iban)) return y;
+
+            g.DrawLine(Pen(cLight, 0.6), x, y, x + w, y);
+            y += 6;
+
+            g.DrawString("Podaci o placanju:", FB(8), Brush(cMid), Rect(x, y, 120, 12), FmtL());
+            y += 13;
+
+            double labelW = 85;
+            g.DrawString("Nacin placanja:", FB(8), Brush(cMid), Rect(x, y, labelW, 12), FmtL());
+            g.DrawString(racun.Placeno ? "Kartica / Gotovina" : "Transakcijski racun",
+                FN(8.5), Brush(cDark), Rect(x + labelW + 2, y, w - labelW - 2, 12), FmtL());
+            y += 12;
+
+            g.DrawString("IBAN:", FB(8), Brush(cMid), Rect(x, y, labelW, 12), FmtL());
+            g.DrawString(_iban, FN(8.5), Brush(cDark), Rect(x + labelW + 2, y, 220, 12), FmtL());
+            y += 12;
+
+            g.DrawString("Poziv na broj:", FB(8), Brush(cMid), Rect(x, y, labelW, 12), FmtL());
+            g.DrawString(racun.BrojRacuna, FN(8.5), Brush(cDark), Rect(x + labelW + 2, y, 220, 12), FmtL());
+
+            return y + 14;
+        }
+
+        // ════════════════════════════════════════════════════════════════════
+        //  9. FOOTER
+        // ════════════════════════════════════════════════════════════════════
+
+        private static void CrtajFooter(XGraphics g, double x, double y, double w, Racun racun)
+        {
+            g.DrawLine(Pen(cLight, 0.6), x, y, x + w, y);
+            y += 5;
+            string l1 = $"{_tvrtka}  |  OIB: {_oib}  |  PDV ID: {_pdvId}";
+            string l2 = $"Racun br. {racun.BrojRacuna}  |  Generiran: {DateTime.Now:dd. MM. yyyy. HH:mm}  |  Sukladno cl. 79. Zakona o PDV-u (NN 73/13)";
+            g.DrawString(l1, FN(6.5), Brush(cMid), Rect(x, y, w, 10), XStringFormats.TopCenter);
+            g.DrawString(l2, FI(6), Brush(cLight), Rect(x, y + 11, w, 10), XStringFormats.TopCenter);
+        }
+
+        // ════════════════════════════════════════════════════════════════════
+        //  HELPERI
+        // ════════════════════════════════════════════════════════════════════
 
         private static void TotalRed(XGraphics g, double x, double y, double w, double h,
             string label, string value, XFont font, XColor color)
         {
-            var sfL = new XStringFormat { Alignment = XStringAlignment.Near, LineAlignment = XLineAlignment.Center };
-            var sfR = new XStringFormat { Alignment = XStringAlignment.Far, LineAlignment = XLineAlignment.Center };
-            g.DrawString(label, font, Brush(color), Rect(x + 6, y, 120, h), sfL);
-            g.DrawString(value, font, Brush(color), Rect(x, y, w - 6, h), sfR);
+            g.DrawString(label, font, Brush(color), Rect(x + 6, y, w - 80, h), FmtL());
+            g.DrawString(value, font, Brush(color), Rect(x, y, w - 6, h), FmtR());
         }
 
-        private static void CrtajNapomenu(XGraphics g, double x, double y, double w, string napomena)
-        {
-            g.DrawString("Napomena:", FB(8), Brush(cGray),
-                Rect(x, y, 70, 14), XStringFormats.TopLeft);
-            g.DrawString(napomena, FI(8), Brush(cGray),
-                Rect(x + 72, y, w - 72, 14), XStringFormats.TopLeft);
-        }
+        private static XStringFormat FmtL() => new XStringFormat
+        { Alignment = XStringAlignment.Near, LineAlignment = XLineAlignment.Near };
 
-        private static void CrtajFooter(XGraphics g, double x, double y, double w, Racun racun)
-        {
-            g.DrawLine(Pen(cBorder, 0.5), x, y, x + w, y);
-            string footer = $"Račun {racun.BrojRacuna}  |  Generiran: {DateTime.Now:dd.MM.yyyy HH:mm}  |  {_tvrtka}  |  OIB: {_oib}";
-            g.DrawString(footer, FN(7), Brush(cGray),
-                Rect(x, y + 5, w, 14), XStringFormats.TopCenter);
-        }
-
-        // ══════════════════════════════════════════════════════════════════════
-        //  MINI HELPERS
-        // ══════════════════════════════════════════════════════════════════════
+        private static XStringFormat FmtR() => new XStringFormat
+        { Alignment = XStringAlignment.Far, LineAlignment = XLineAlignment.Near };
 
         private static XSolidBrush Brush(XColor c) => new XSolidBrush(c);
         private static XPen Pen(XColor c, double w) => new XPen(c, w);
         private static XRect Rect(double x, double y, double w, double h) => new XRect(x, y, w, h);
 
-        private static XColor StatusBoja(string status)
+        private static string TruncStr(string s, int max)
         {
-            switch (status)
-            {
-                case "PLAĆENO": return cSuccess;
-                case "PROKNJIZENO": return cInfo;
-                default: return cWarning;
-            }
+            if (s == null) return "";
+            return s.Length > max ? s.Substring(0, max - 1) + "..." : s;
         }
+
+        private static string Sanitize(string s)
+            => s?.Replace("/", "-").Replace("\\", "-").Replace(":", "-") ?? "racun";
+
+        // ════════════════════════════════════════════════════════════════════
+        //  POSTAVKE TVRTKE IZ BAZE
+        // ════════════════════════════════════════════════════════════════════
 
         private static void UcitajPostavkeTvrtke()
         {
@@ -381,27 +520,17 @@ namespace Trgovina.Utils
                 var p = DatabaseHelper.GetSvePostavke();
                 if (p.ContainsKey("NazivTvrtke")) _tvrtka = p["NazivTvrtke"];
                 if (p.ContainsKey("OIB")) _oib = p["OIB"];
+                if (p.ContainsKey("PdvId")) _pdvId = p["PdvId"];
                 if (p.ContainsKey("Telefon")) _telefon = p["Telefon"];
                 if (p.ContainsKey("Email")) _email = p["Email"];
+                if (p.ContainsKey("IBAN")) _iban = p["IBAN"];
 
                 string adr = p.ContainsKey("Adresa") ? p["Adresa"] : "";
                 string grad = p.ContainsKey("Grad") ? p["Grad"] : "";
                 string pbr = p.ContainsKey("PostanskiBroj") ? p["PostanskiBroj"] : "";
                 _adresa = $"{adr}, {pbr} {grad}".Trim(' ', ',');
             }
-            catch { }
-        }
-
-        public static string GenerirajPdfTemp(Racun racun)
-        {
-            UcitajPostavkeTvrtke();
-
-            string temp = Path.Combine(Path.GetTempPath(),
-                $"racun_preview_{Guid.NewGuid():N}.pdf");
-
-            GenerirajPdf(racun, temp);
-
-            return temp;
+            catch { /* tiho — koristimo defaults */ }
         }
     }
 }

@@ -115,9 +115,7 @@ namespace Trgovina.Forms
             sep.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             this.Controls.Add(sep);
             this.SizeChanged += (s, e) => sep.Width = this.ClientSize.Width - 30;
-            sep.Width = 1020;
 
-            // Dno — gumbi
             Panel pnlDno = new Panel();
             pnlDno.Dock = DockStyle.Bottom;
             pnlDno.Height = 56;
@@ -147,7 +145,6 @@ namespace Trgovina.Forms
             btnOdustani.Click += (s, e) => { DialogResult = DialogResult.Cancel; Close(); };
             pnlDno.Controls.Add(btnOdustani);
 
-            // Preview gumb — HTML preview bez spremanja u bazu
             Guna2Button btnPreview = new Guna2Button();
             btnPreview.Text = "👁  Preview";
             btnPreview.Size = new Size(130, 38); btnPreview.Location = new Point(326, 9);
@@ -157,26 +154,36 @@ namespace Trgovina.Forms
             btnPreview.BorderRadius = 8; btnPreview.Cursor = Cursors.Hand;
             btnPreview.Click += BtnPreview_Click;
             pnlDno.Controls.Add(btnPreview);
+
             Panel pnlScroll = new Panel();
             pnlScroll.Dock = DockStyle.Fill;
+            pnlScroll.AutoScroll = true;
             pnlScroll.BackColor = AppColors.Background;
             this.Controls.Add(pnlScroll);
 
-            // Card: Zaglavlje
-            Guna2Panel cardZaglavlje = KreirajCard(pnlScroll, 15, 48, 0, 148);
+            const int zaglavljeH = 200;
+            Guna2Panel cardZaglavlje = KreirajCard(pnlScroll, 15, 48, 0, zaglavljeH);
             cardZaglavlje.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-            this.SizeChanged += (s, e) => cardZaglavlje.Width = this.ClientSize.Width - 30;
+            this.SizeChanged += (s, e) => cardZaglavlje.Width = pnlScroll.ClientSize.Width - 30;
+            cardZaglavlje.Width = this.ClientSize.Width - 30;
             KreirajZaglavljeCard(cardZaglavlje);
 
-            // Card: Stavke
-            Guna2Panel cardStavke = KreirajCard(pnlScroll, 15, 204, 0, 0);
+            int stavkeTop = 48 + zaglavljeH + 10; 
+            Guna2Panel cardStavke = KreirajCard(pnlScroll, 15, stavkeTop, 0, 0);
             cardStavke.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom;
-            this.SizeChanged += (s, e) =>
+
+            void ResizeCards(object s, EventArgs e)
             {
-                cardStavke.Width = this.ClientSize.Width - 30;
-                cardStavke.Height = this.ClientSize.Height - pnlDno.Height - 204 - 10;
-            };
-            cardStavke.Width = 1020; cardStavke.Height = 430;
+                int w = pnlScroll.ClientSize.Width - 30;
+                cardZaglavlje.Width = w;
+                cardStavke.Width = w;
+                cardStavke.Height = pnlScroll.ClientSize.Height - stavkeTop - 10;
+            }
+
+            this.SizeChanged += ResizeCards;
+            cardStavke.Width = this.ClientSize.Width - 30;
+            cardStavke.Height = this.ClientSize.Height - pnlDno.Height - stavkeTop - 10;
+
             KreirajStavkeCard(cardStavke);
         }
 
@@ -204,17 +211,17 @@ namespace Trgovina.Forms
 
             dtpDatumRacuna = new DateTimePicker();
             dtpDatumRacuna.Size = new Size(inW, inH);
-            dtpDatumRacuna.Location = new Point(x2, y);
+            dtpDatumRacuna.Location = new Point(x2, y + 10);
             dtpDatumRacuna.Format = DateTimePickerFormat.Short;
             card.Controls.Add(dtpDatumRacuna);
 
             dtpDatumValute = new DateTimePicker();
             dtpDatumValute.Size = new Size(inW, inH);
-            dtpDatumValute.Location = new Point(x3, y);
+            dtpDatumValute.Location = new Point(x3, y + 10);
             dtpDatumValute.Format = DateTimePickerFormat.Short;
             card.Controls.Add(dtpDatumValute);
 
-            cmbProdavac = DodajComboBox(card, x4, y, inW);
+            cmbProdavac = DodajComboBox(card, x4, y + 5, inW);
 
             tglPlaceno = new Guna2ToggleSwitch();
             tglPlaceno.Size = new Size(48, 24);
@@ -226,8 +233,8 @@ namespace Trgovina.Forms
             y += inH + 14;
 
             // Red 2: Kupac picker + napomena
-            DodajLabel(card, "Kupac *", x1, y);
-            DodajLabel(card, "Napomena", x4, y);
+            DodajLabel(card, "Kupac *", x1, y + 5);
+            DodajLabel(card, "Napomena", x4, y + 5);
             y += 18;
 
             // Kupac: textbox (read-only prikaz) + gumb za odabir
@@ -246,7 +253,7 @@ namespace Trgovina.Forms
             btnOdaberiKupca = new Guna2Button();
             btnOdaberiKupca.Text = "👥  Odaberi";
             btnOdaberiKupca.Size = new Size(100, inH);
-            btnOdaberiKupca.Location = new Point(x1 + inW + 185 + 6, y);
+            btnOdaberiKupca.Location = new Point(x1 + inW + 185 + 6, y + 20);
             btnOdaberiKupca.FillColor = AppColors.Secondary;
             btnOdaberiKupca.HoverState.FillColor = AppColors.Primary;
             btnOdaberiKupca.Font = AppFonts.Regular;
@@ -307,20 +314,20 @@ namespace Trgovina.Forms
             pnlUnos.Controls.Add(btnOdaberiArtikl);
 
             DodajMiniLabel(pnlUnos, "Kol.:", 348, 14);
-            txtKolicina = DodajMiniTextBox(pnlUnos, 376, 7, 68);
+            txtKolicina = DodajMiniTextBox(pnlUnos, 386, 7, 68);
             txtKolicina.Text = "1";
 
-            DodajMiniLabel(pnlUnos, "Cijena:", 452, 14);
-            txtCijena = DodajMiniTextBox(pnlUnos, 494, 7, 88);
+            DodajMiniLabel(pnlUnos, "Cijena:", 462, 14);
+            txtCijena = DodajMiniTextBox(pnlUnos, 512, 7, 88);
 
-            DodajMiniLabel(pnlUnos, "Pop%:", 590, 14);
-            txtPopust = DodajMiniTextBox(pnlUnos, 624, 7, 58);
+            DodajMiniLabel(pnlUnos, "Pop%:", 605, 14);
+            txtPopust = DodajMiniTextBox(pnlUnos, 652, 7, 58);
             txtPopust.Text = "0";
 
             btnDodajStavku = new Guna2Button();
             btnDodajStavku.Text = "➕  Dodaj";
             btnDodajStavku.Size = new Size(88, 30);
-            btnDodajStavku.Location = new Point(690, 7);
+            btnDodajStavku.Location = new Point(740, 7);
             btnDodajStavku.FillColor = AppColors.Success;
             btnDodajStavku.HoverState.FillColor = ControlPaint.Light(AppColors.Success, 0.15f);
             btnDodajStavku.Font = AppFonts.Regular;
@@ -333,7 +340,7 @@ namespace Trgovina.Forms
             btnUkloniStavku = new Guna2Button();
             btnUkloniStavku.Text = "🗑  Ukloni";
             btnUkloniStavku.Size = new Size(88, 30);
-            btnUkloniStavku.Location = new Point(786, 7);
+            btnUkloniStavku.Location = new Point(840, 7);
             btnUkloniStavku.FillColor = AppColors.Danger;
             btnUkloniStavku.HoverState.FillColor = ControlPaint.Light(AppColors.Danger, 0.15f);
             btnUkloniStavku.Font = AppFonts.Regular;
@@ -381,9 +388,9 @@ namespace Trgovina.Forms
             card.SizeChanged += (s, e) =>
             {
                 dgvStavke.Width = card.Width - 30;
-                dgvStavke.Height = card.Height - y - 78;
+                dgvStavke.Height = card.Height - y - 108;
             };
-            dgvStavke.Width = 990; dgvStavke.Height = 240;
+            dgvStavke.Width = 990; dgvStavke.Height = 200;
 
             KonfigurisiKoloneStavki();
 
@@ -394,8 +401,8 @@ namespace Trgovina.Forms
             pnlTotali.Size = new Size(380, 56);
             card.Controls.Add(pnlTotali);
             card.SizeChanged += (s, e) =>
-                pnlTotali.Location = new Point(card.Width - 395, card.Height - 64);
-            pnlTotali.Location = new Point(625, 370);
+                pnlTotali.Location = new Point(card.Width - 395, card.Height - 108);
+            pnlTotali.Location = new Point(625, 330);
 
             lblBezPdv = KreirajTotalLabel(pnlTotali, "Ukupno bez PDV:", 0);
             lblPdvIznos = KreirajTotalLabel(pnlTotali, "PDV:", 20);
