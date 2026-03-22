@@ -32,6 +32,9 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>favicon.ico</ApplicationIcon>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="Guna.UI2, Version=2.0.4.7, Culture=neutral, PublicKeyToken=8b9d14aa5142e261, processorArchitecture=MSIL">
       <HintPath>..\packages\Guna.UI2.WinForms.2.0.4.7\lib\net472\Guna.UI2.dll</HintPath>
@@ -113,7 +116,9 @@
     <Compile Include="Data\DatabaseHelper.cs" />
     <Compile Include="Data\GrupeArtikalaRepository.cs" />
     <Compile Include="Data\JediniceMjereRepository.cs" />
+    <Compile Include="Data\KalkulacijaRepository.cs" />
     <Compile Include="Data\Models\Artikl.cs" />
+    <Compile Include="Data\Models\Kalkulacija.cs" />
     <Compile Include="Data\Models\Partner.cs" />
     <Compile Include="Data\Models\Prodavac.cs" />
     <Compile Include="Data\Models\Racun.cs" />
@@ -143,6 +148,12 @@
     </Compile>
     <Compile Include="Forms\frmJedinicaMjere.Designer.cs">
       <DependentUpon>frmJedinicaMjere.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\frmKalkulacija.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\frmKalkulacija.Designer.cs">
+      <DependentUpon>frmKalkulacija.cs</DependentUpon>
     </Compile>
     <Compile Include="Forms\frmMain.cs">
       <SubType>Form</SubType>
@@ -224,6 +235,12 @@
     <Compile Include="UserControls\JediniceMjereControl.Designer.cs">
       <DependentUpon>JediniceMjereControl.cs</DependentUpon>
     </Compile>
+    <Compile Include="UserControls\KalkulacijeControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="UserControls\KalkulacijeControl.Designer.cs">
+      <DependentUpon>KalkulacijeControl.cs</DependentUpon>
+    </Compile>
     <Compile Include="UserControls\PartneriControl.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -243,6 +260,7 @@
       <DependentUpon>RacuniControl.cs</DependentUpon>
     </Compile>
     <Compile Include="Utils\AppColors.cs" />
+    <Compile Include="Utils\KalkulacijaPdfHelper.cs" />
     <Compile Include="Utils\RacunPdfHelper.cs" />
     <EmbeddedResource Include="Forms\frmLogin.resx">
       <DependentUpon>frmLogin.cs</DependentUpon>
@@ -281,6 +299,9 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Resources\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="favicon.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
