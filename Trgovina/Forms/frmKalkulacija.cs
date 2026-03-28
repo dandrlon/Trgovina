@@ -260,7 +260,7 @@ namespace Trgovina.Forms
 
             btnOdaberiDobavljaca = new Guna2Button
             {
-                Text = "🏭  Odaberi",
+                Text = "🏭",
                 Size = new Size(100, inH),
                 Location = new Point(x1 + inW + 170 + 6, y + 20),
                 FillColor = AppColors.Secondary,
@@ -310,7 +310,7 @@ namespace Trgovina.Forms
             // Artikl
             txtArtiklPrikaz = new Guna2TextBox
             {
-                PlaceholderText = "Odaberite artikl...",
+                PlaceholderText = "Odaberite artikl -> ...",
                 Size = new Size(230, 30),
                 Location = new Point(6, 7),
                 FillColor = AppColors.Background,
@@ -324,9 +324,9 @@ namespace Trgovina.Forms
 
             btnOdaberiArtikl = new Guna2Button
             {
-                Text = "📦  Artikl",
+                Text = "📦",
                 Size = new Size(82, 30),
-                Location = new Point(242, 7),
+                Location = new Point(242, 10),
                 FillColor = AppColors.Secondary,
                 Font = AppFonts.Regular,
                 ForeColor = Color.White,
@@ -339,24 +339,24 @@ namespace Trgovina.Forms
 
             // Kolicina
             DodajMiniLabel(pnlUnos, "Kol.:", 332, 14);
-            txtKolicina = DodajMiniTextBox(pnlUnos, 358, 7, 64);
+            txtKolicina = DodajMiniTextBox(pnlUnos, 370, 7, 64);
             txtKolicina.Text = "1";
 
             // Nabavna cijena (s PDV-om — onako kako piše na ulaznom računu)
-            DodajMiniLabel(pnlUnos, "Cij. s PDV:", 430, 14);
-            txtNabavnaCijena = DodajMiniTextBox(pnlUnos, 492, 7, 78);
+            DodajMiniLabel(pnlUnos, "Cij. s PDV:", 445, 14);
+            txtNabavnaCijena = DodajMiniTextBox(pnlUnos, 520, 7, 78);
 
             // PDV stopa
-            DodajMiniLabel(pnlUnos, "PDV%:", 578, 14);
-            txtPdvStopa = DodajMiniTextBox(pnlUnos, 612, 7, 50);
+            DodajMiniLabel(pnlUnos, "PDV%:", 600, 14);
+            txtPdvStopa = DodajMiniTextBox(pnlUnos, 650, 7, 50);
             txtPdvStopa.Text = "25";
 
             // Gumbi
             btnDodajStavku = new Guna2Button
             {
-                Text = "➕  Dodaj",
-                Size = new Size(82, 30),
-                Location = new Point(670, 7),
+                Text = "➕ Dodaj",
+                Size = new Size(102, 30),
+                Location = new Point(720, 7),
                 FillColor = AppColors.Success,
                 Font = AppFonts.Regular,
                 ForeColor = Color.White,
@@ -369,9 +369,9 @@ namespace Trgovina.Forms
 
             btnUkloniStavku = new Guna2Button
             {
-                Text = "🗑  Ukloni",
-                Size = new Size(82, 30),
-                Location = new Point(760, 7),
+                Text = "🗑 Ukloni",
+                Size = new Size(102, 30),
+                Location = new Point(840, 7),
                 FillColor = AppColors.Danger,
                 Font = AppFonts.Regular,
                 ForeColor = Color.White,

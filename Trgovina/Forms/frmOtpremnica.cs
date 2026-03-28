@@ -301,7 +301,7 @@ namespace Trgovina.Forms
             btnDodajStavku = new Guna2Button
             {
                 Text = "➕  Dodaj",
-                Size = new Size(88, 30),
+                Size = new Size(102, 30),
                 Location = new Point(668, 7),
                 FillColor = AppColors.Success,
                 Font = AppFonts.Regular,
@@ -316,8 +316,8 @@ namespace Trgovina.Forms
             btnUkloniStavku = new Guna2Button
             {
                 Text = "🗑  Ukloni",
-                Size = new Size(88, 30),
-                Location = new Point(768, 7),
+                Size = new Size(102, 30),
+                Location = new Point(788, 7),
                 FillColor = AppColors.Danger,
                 Font = AppFonts.Regular,
                 ForeColor = Color.White,
