@@ -119,9 +119,11 @@
     <Compile Include="Data\KalkulacijaRepository.cs" />
     <Compile Include="Data\Models\Artikl.cs" />
     <Compile Include="Data\Models\Kalkulacija.cs" />
+    <Compile Include="Data\Models\Otpremnica.cs" />
     <Compile Include="Data\Models\Partner.cs" />
     <Compile Include="Data\Models\Prodavac.cs" />
     <Compile Include="Data\Models\Racun.cs" />
+    <Compile Include="Data\OtpremnicaRepository.cs" />
     <Compile Include="Data\PartneriRepository.cs" />
     <Compile Include="Data\PDVRepository.cs" />
     <Compile Include="Data\RacuniRepository.cs" />
@@ -173,11 +175,23 @@
     <Compile Include="Forms\frmOdabirArtikla.Designer.cs">
       <DependentUpon>frmOdabirArtikla.cs</DependentUpon>
     </Compile>
+    <Compile Include="Forms\frmOdabirDatuma.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\frmOdabirDatuma.Designer.cs">
+      <DependentUpon>frmOdabirDatuma.cs</DependentUpon>
+    </Compile>
     <Compile Include="Forms\frmOdabirPartnera.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Forms\frmOdabirPartnera.Designer.cs">
       <DependentUpon>frmOdabirPartnera.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\frmOtpremnica.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\frmOtpremnica.Designer.cs">
+      <DependentUpon>frmOtpremnica.cs</DependentUpon>
     </Compile>
     <Compile Include="Forms\frmPartneri.cs">
       <SubType>Form</SubType>
@@ -241,6 +255,12 @@
     <Compile Include="UserControls\KalkulacijeControl.Designer.cs">
       <DependentUpon>KalkulacijeControl.cs</DependentUpon>
     </Compile>
+    <Compile Include="UserControls\OtpremnicaControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="UserControls\OtpremnicaControl.Designer.cs">
+      <DependentUpon>OtpremnicaControl.cs</DependentUpon>
+    </Compile>
     <Compile Include="UserControls\PartneriControl.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -261,6 +281,7 @@
     </Compile>
     <Compile Include="Utils\AppColors.cs" />
     <Compile Include="Utils\KalkulacijaPdfHelper.cs" />
+    <Compile Include="Utils\OtpremnicaPdfHelper.cs" />
     <Compile Include="Utils\RacunPdfHelper.cs" />
     <EmbeddedResource Include="Forms\frmLogin.resx">
       <DependentUpon>frmLogin.cs</DependentUpon>

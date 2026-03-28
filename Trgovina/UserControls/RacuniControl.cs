@@ -512,7 +512,7 @@ namespace Trgovina.UserControls
             btnUredi.Enabled = sel && !_odabrani.Proknjizeno;
             btnObrisi.Enabled = sel && !_odabrani.Proknjizeno;
 
-            btnPlaceno.Enabled = sel && !_odabrani.Placeno;
+            btnPlaceno.Enabled = sel && !_odabrani.Placeno && _odabrani.Proknjizeno;
             btnKnjizi.Enabled = sel && !_odabrani.Proknjizeno;
         }
 

@@ -509,5 +509,76 @@ namespace Trgovina.Data
             cmd.Parameters.AddWithValue("@napomena", string.IsNullOrEmpty(r.Napomena)
                                                         ? (object)DBNull.Value : r.Napomena);
         }
+
+
+        // Ova metoda radi isto kao DodajRacun, ali koristi vanjski connection i
+        // transakciju — potrebno za FakturirajOtpremnicu koji mora sve napraviti
+        // unutar jedne transakcije.
+
+        /// <summary>
+        /// Dodaje račun unutar postojeće transakcije (koristi se pri fakturiranju otpremnice).
+        /// Vraća ID novog računa.
+        /// </summary>
+        public static int DodajRacunUTransakciji(SqlConnection conn, SqlTransaction tx, Racun r)
+        {
+            string sql = @"
+            INSERT INTO racuni
+                (broj_racuna, datum_racuna, datum_valute, datum_isporuke,
+                 kupac_id, prodavac_id,
+                 ukupno_bez_pdv, ukupno_pdv, ukupno_sa_pdv,
+                 placeno, proknjizeno, datum_knjizenja, status, napomena)
+            VALUES
+                (@broj, @datum, @valuta, @isporuka,
+                 @kupac, @prodavac,
+                 @bezPdv, @pdv, @saPdv,
+                 @placeno, @proknjizeno, @datKnjiz, @status, @napomena);
+            SELECT SCOPE_IDENTITY();";
+
+            using (var cmd = new SqlCommand(sql, conn, tx))
+            {
+                DodajParametreRacuna(cmd, r);
+                cmd.Parameters.AddWithValue("@isporuka", r.DatumIsporuke.HasValue
+                                                                ? (object)r.DatumIsporuke.Value : DBNull.Value);
+                cmd.Parameters.AddWithValue("@proknjizeno", r.Proknjizeno ? 1 : 0);
+                cmd.Parameters.AddWithValue("@datKnjiz", r.Proknjizeno
+                                                                ? (object)DateTime.Now : DBNull.Value);
+
+                int newId = Convert.ToInt32(cmd.ExecuteScalar());
+
+                foreach (var s in r.Stavke)
+                {
+                    s.RacunId = newId;
+                    DodajStavkuUTransakciji(conn, tx, s);
+                }
+
+                return newId;
+            }
+        }
+
+        private static void DodajStavkuUTransakciji(SqlConnection conn, SqlTransaction tx, RacunStavka s)
+        {
+            string sql = @"
+        INSERT INTO racun_stavke
+            (racun_id, artikl_id, rbr, kolicina, prodajna_cijena, popust,
+             pdv_stopa, iznos_bez_pdv, iznos_pdv, iznos_sa_pdv)
+        VALUES
+            (@racunId, @artiklId, @rbr, @kolicina, @cijena, @popust,
+             @pdvStopa, @bezPdv, @pdv, @saPdv)";
+
+            using (var cmd = new SqlCommand(sql, conn, tx))
+            {
+                cmd.Parameters.AddWithValue("@racunId", s.RacunId);
+                cmd.Parameters.AddWithValue("@artiklId", s.ArtiklId);
+                cmd.Parameters.AddWithValue("@rbr", s.Rbr);
+                cmd.Parameters.AddWithValue("@kolicina", s.Kolicina);
+                cmd.Parameters.AddWithValue("@cijena", s.ProdajnaCijena);
+                cmd.Parameters.AddWithValue("@popust", s.Popust);
+                cmd.Parameters.AddWithValue("@pdvStopa", s.PdvStopa);
+                cmd.Parameters.AddWithValue("@bezPdv", s.IznosBezPdv);
+                cmd.Parameters.AddWithValue("@pdv", s.IznosPdv);
+                cmd.Parameters.AddWithValue("@saPdv", s.IznosSaPdv);
+                cmd.ExecuteNonQuery();
+            }
+        }
     }
 }
