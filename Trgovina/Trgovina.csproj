@@ -121,11 +121,13 @@
     <Compile Include="Data\Models\Kalkulacija.cs" />
     <Compile Include="Data\Models\Otpremnica.cs" />
     <Compile Include="Data\Models\Partner.cs" />
+    <Compile Include="Data\Models\Ponuda.cs" />
     <Compile Include="Data\Models\Prodavac.cs" />
     <Compile Include="Data\Models\Racun.cs" />
     <Compile Include="Data\OtpremnicaRepository.cs" />
     <Compile Include="Data\PartneriRepository.cs" />
     <Compile Include="Data\PDVRepository.cs" />
+    <Compile Include="Data\PonudaRepository.cs" />
     <Compile Include="Data\RacuniRepository.cs" />
     <Compile Include="Forms\frmArtikli.cs">
       <SubType>Form</SubType>
@@ -205,6 +207,12 @@
     <Compile Include="Forms\frmPdvStopa.Designer.cs">
       <DependentUpon>frmPdvStopa.cs</DependentUpon>
     </Compile>
+    <Compile Include="Forms\frmPonuda.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\frmPonuda.Designer.cs">
+      <DependentUpon>frmPonuda.cs</DependentUpon>
+    </Compile>
     <Compile Include="Forms\frmPostavke.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -273,6 +281,12 @@
     <Compile Include="UserControls\PdvStopeControl.Designer.cs">
       <DependentUpon>PdvStopeControl.cs</DependentUpon>
     </Compile>
+    <Compile Include="UserControls\PonudeControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="UserControls\PonudeControl.Designer.cs">
+      <DependentUpon>PonudeControl.cs</DependentUpon>
+    </Compile>
     <Compile Include="UserControls\RacuniControl.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -282,6 +296,7 @@
     <Compile Include="Utils\AppColors.cs" />
     <Compile Include="Utils\KalkulacijaPdfHelper.cs" />
     <Compile Include="Utils\OtpremnicaPdfHelper.cs" />
+    <Compile Include="Utils\PonudaPdfHelper.cs" />
     <Compile Include="Utils\RacunPdfHelper.cs" />
     <EmbeddedResource Include="Forms\frmLogin.resx">
       <DependentUpon>frmLogin.cs</DependentUpon>

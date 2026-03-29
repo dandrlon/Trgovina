@@ -129,16 +129,6 @@ namespace Trgovina.Utils
             g.DrawString("Otpremnica", FB(22), Brush(cDark), Rect(x, y, 200, 30), FmtL());
             g.DrawString(o.BrojOtpremnice, FN(11), Brush(cMid), Rect(x, y + 5, w, 20), FmtR());
 
-            // Status badge (ako je isporučena ili fakturirana)
-            if (o.Isporuceno || o.Fakturirano)
-            {
-                string badge = o.Fakturirano ? "FAKTURIRANA" : "ISPORUČENA";
-                g.DrawRectangle(Brush(o.Fakturirano ? cMid : cDark),
-                    x + w - 105, y + 2, 100, 16);
-                g.DrawString(badge, FB(7), Brush(cWhite),
-                    Rect(x + w - 105, y + 2, 100, 16), FmtC());
-            }
-
             y += 32;
             g.DrawLine(Pen(cLight, 0.6), x, y + 14, x + w, y + 14);
             return y + 16;

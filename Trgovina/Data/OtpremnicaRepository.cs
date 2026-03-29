@@ -162,6 +162,74 @@ namespace Trgovina.Data
             }
         }
 
+        // Ova metoda radi isto kao DodajOtpremnicu, ali koristi vanjski connection i
+        // transakciju — potrebno za PretvoriUOtpremnicu u PonudaRepository.
+
+        /// <summary>
+        /// Dodaje otpremnicu unutar postojeće transakcije (koristi se pri pretvorbi ponude).
+        /// Vraća ID nove otpremnice.
+        /// </summary>
+        public static int DodajOtpremnicuUTransakciji(SqlConnection conn, SqlTransaction tx, Otpremnica o)
+        {
+            string sql = @"
+        INSERT INTO otpremnice
+            (broj_otpremnice, datum_otpremnice, datum_isporuke, kupac_id, prodavac_id,
+             ukupno_vrijednost, isporuceno, fakturirano, status, napomena)
+        VALUES
+            (@broj, @datum, @isporuka, @kupac, @prodavac,
+             @ukupno, 0, 0, @status, @napomena);
+        SELECT SCOPE_IDENTITY();";
+
+            using (var cmd = new SqlCommand(sql, conn, tx))
+            {
+                cmd.Parameters.AddWithValue("@broj", o.BrojOtpremnice);
+                cmd.Parameters.AddWithValue("@datum", o.DatumOtpremnice);
+                cmd.Parameters.AddWithValue("@isporuka", o.DatumIsporuke.HasValue
+                                                            ? (object)o.DatumIsporuke.Value : DBNull.Value);
+                cmd.Parameters.AddWithValue("@kupac", o.KupacId);
+                cmd.Parameters.AddWithValue("@prodavac", o.ProdavacId.HasValue
+                                                            ? (object)o.ProdavacId.Value : DBNull.Value);
+                cmd.Parameters.AddWithValue("@ukupno", o.UkupnoVrijednost);
+                cmd.Parameters.AddWithValue("@status", o.Status ?? "KREIRANA");
+                cmd.Parameters.AddWithValue("@napomena", string.IsNullOrEmpty(o.Napomena)
+                                                            ? (object)DBNull.Value : o.Napomena);
+
+                int newId = Convert.ToInt32(cmd.ExecuteScalar());
+
+                foreach (var s in o.Stavke)
+                {
+                    s.OtpremnicaId = newId;
+                    DodajStavkuUTransakciji(conn, tx, s);
+                }
+                return newId;
+            }
+        }
+
+        private static void DodajStavkuUTransakciji(SqlConnection conn, SqlTransaction tx, OtpremnicaStavka s)
+        {
+            string sql = @"
+        INSERT INTO otpremnica_stavke
+            (otpremnica_id, artikl_id, rbr, kolicina,
+             cijena_bez_pdv, iznos_bez_pdv, pdv_stopa, napomena)
+        VALUES
+            (@oId, @artiklId, @rbr, @kolicina,
+             @cijena, @iznos, @pdvStopa, @napomena)";
+
+            using (var cmd = new SqlCommand(sql, conn, tx))
+            {
+                cmd.Parameters.AddWithValue("@oId", s.OtpremnicaId);
+                cmd.Parameters.AddWithValue("@artiklId", s.ArtiklId);
+                cmd.Parameters.AddWithValue("@rbr", s.Rbr);
+                cmd.Parameters.AddWithValue("@kolicina", s.Kolicina);
+                cmd.Parameters.AddWithValue("@cijena", s.CijenaBezPdv);
+                cmd.Parameters.AddWithValue("@iznos", s.IznosBezPdv);
+                cmd.Parameters.AddWithValue("@pdvStopa", s.PdvStopa);
+                cmd.Parameters.AddWithValue("@napomena", string.IsNullOrEmpty(s.Napomena)
+                                                            ? (object)DBNull.Value : s.Napomena);
+                cmd.ExecuteNonQuery();
+            }
+        }
+
         private static void DodajStavku(SqlConnection conn, OtpremnicaStavka s)
         {
             string sql = @"
