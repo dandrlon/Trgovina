@@ -197,7 +197,7 @@ namespace Trgovina
             var btnKalkulacije = AddNavButton("📥  Kalkulacije", yPos, () => LoadUserControl(new UserControls.KalkulacijeControl())); yPos += 50;
             var btnPonude = AddNavButton("📋  Ponude", yPos, () => LoadUserControl(new UserControls.PonudeControl())); yPos += 50;
             var btnOtpremnice = AddNavButton("📦  Otpremnice", yPos, () => LoadUserControl(new UserControls.OtpremnicaControl())); yPos += 50;
-            AddNavButton("📊  Izvještaji", yPos, null); yPos += 50;
+            var btnIzvjestaji = AddNavButton("📊  Izvještaji", yPos, () => LoadUserControl(new UserControls.IzvjestajiControl()));
 
             // ── Separator + naslov sekcije Šifarnici ──────────────────────────────────
             yPos += 15;

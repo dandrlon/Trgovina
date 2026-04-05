@@ -251,6 +251,12 @@
     <Compile Include="UserControls\GrupeArtikalaControl.Designer.cs">
       <DependentUpon>GrupeArtikalaControl.cs</DependentUpon>
     </Compile>
+    <Compile Include="UserControls\IzvjestajiControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="UserControls\IzvjestajiControl.Designer.cs">
+      <DependentUpon>IzvjestajiControl.cs</DependentUpon>
+    </Compile>
     <Compile Include="UserControls\JediniceMjereControl.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -294,6 +300,7 @@
       <DependentUpon>RacuniControl.cs</DependentUpon>
     </Compile>
     <Compile Include="Utils\AppColors.cs" />
+    <Compile Include="Utils\IzvjestajiPdfHelper.cs" />
     <Compile Include="Utils\KalkulacijaPdfHelper.cs" />
     <Compile Include="Utils\OtpremnicaPdfHelper.cs" />
     <Compile Include="Utils\PonudaPdfHelper.cs" />

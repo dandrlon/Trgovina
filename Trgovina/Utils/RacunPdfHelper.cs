@@ -530,7 +530,7 @@ namespace Trgovina.Utils
                 string pbr = p.ContainsKey("PostanskiBroj") ? p["PostanskiBroj"] : "";
                 _adresa = $"{adr}, {pbr} {grad}".Trim(' ', ',');
             }
-            catch { /* tiho — koristimo defaults */ }
+            catch { /* koristimo defaults */ }
         }
     }
 }
