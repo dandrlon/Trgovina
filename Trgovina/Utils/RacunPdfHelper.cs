@@ -1,8 +1,10 @@
 ﻿using PdfSharp.Drawing;
 using PdfSharp.Fonts;
 using PdfSharp.Pdf;
+using QRCoder;
 using System;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Windows.Forms;
@@ -142,6 +144,14 @@ namespace Trgovina.Utils
             }
 
             y = CrtajUplata(g, ml, y, cw, racun);
+
+            // ── Fiskalizacijski blok (JIR, ZKI, QR) ─────────────────────────────
+            if (!string.IsNullOrWhiteSpace(racun.JIR) || !string.IsNullOrWhiteSpace(racun.ZKI))
+            {
+                y += 8;
+                y = CrtajFiskalniBlok(g, ml, y, cw, racun);
+            }
+
 
             CrtajFooter(g, ml, ph - 36, cw, racun);
 
@@ -400,6 +410,9 @@ namespace Trgovina.Utils
         //  6. TOTALI
         // ════════════════════════════════════════════════════════════════════
 
+       
+
+        
         private static double CrtajTotale(XGraphics g, double x, double y, double w, Racun racun)
         {
             double tw = 230;
@@ -450,9 +463,20 @@ namespace Trgovina.Utils
             y += 13;
 
             double labelW = 85;
-            g.DrawString("Nacin placanja:", FB(8), Brush(cMid), Rect(x, y, labelW, 12), FmtL());
-            g.DrawString(racun.Placeno ? "Kartica / Gotovina" : "Transakcijski racun",
-                FN(8.5), Brush(cDark), Rect(x + labelW + 2, y, w - labelW - 2, 12), FmtL());
+            g.DrawString("Način plaćanja:", FB(8), Brush(cMid), Rect(x, y, labelW, 12), FmtL());
+
+            string nacinPlacanjaTekst;
+            switch (racun.NacinPlacanja)
+            {
+                case "G": nacinPlacanjaTekst = "Gotovina"; break;
+                case "K": nacinPlacanjaTekst = "Kartica"; break;
+                case "T": nacinPlacanjaTekst = "Transakcijski račun"; break;
+                case "C": nacinPlacanjaTekst = "Ček"; break;
+                default: nacinPlacanjaTekst = "Transakcijski račun"; break;
+            }
+
+            g.DrawString(nacinPlacanjaTekst, FN(8.5), Brush(cDark),
+                Rect(x + labelW + 2, y, w - labelW - 2, 12), FmtL());
             y += 12;
 
             g.DrawString("IBAN:", FB(8), Brush(cMid), Rect(x, y, labelW, 12), FmtL());
@@ -469,14 +493,149 @@ namespace Trgovina.Utils
         //  9. FOOTER
         // ════════════════════════════════════════════════════════════════════
 
-        private static void CrtajFooter(XGraphics g, double x, double y, double w, Racun racun)
+        private static void CrtajFooter(XGraphics g, double x, double y,
+              double w, Racun racun)
         {
             g.DrawLine(Pen(cLight, 0.6), x, y, x + w, y);
             y += 5;
+
             string l1 = $"{_tvrtka}  |  OIB: {_oib}  |  PDV ID: {_pdvId}";
-            string l2 = $"Racun br. {racun.BrojRacuna}  |  Generiran: {DateTime.Now:dd. MM. yyyy. HH:mm}  |  Sukladno cl. 79. Zakona o PDV-u (NN 73/13)";
+            string l2 = $"Racun br. {racun.BrojRacuna}  |  Generiran: {DateTime.Now:dd. MM. yyyy. HH:mm}  |  Sukladno cl. 79. Zakona o PDV-u (NN 73/13) i Zakonu o fiskalizaciji (NN 89/2025)";
+
             g.DrawString(l1, FN(6.5), Brush(cMid), Rect(x, y, w, 10), XStringFormats.TopCenter);
             g.DrawString(l2, FI(6), Brush(cLight), Rect(x, y + 11, w, 10), XStringFormats.TopCenter);
+
+            // Status fiskalizacije u footeru
+            if (!string.IsNullOrWhiteSpace(racun.JIR))
+            {
+                g.DrawString($"Fiskalizirano: {racun.FiskalizacijaVrijeme}",
+                    FI(5.5), Brush(cLight), Rect(x, y + 22, w, 10), XStringFormats.TopCenter);
+            }
+        }
+
+        // ════════════════════════════════════════════════════════════════════
+        //  10. FISKALNI BLOK (JIR, ZKI, QR kod)
+        //  Sukladno čl. 9 Zakona o fiskalizaciji — obavezni podaci na računu
+        // ════════════════════════════════════════════════════════════════════
+
+        private static double CrtajFiskalniBlok(XGraphics g, double x, double y,
+            double w, Racun racun)
+        {
+            // Gornja linija
+            g.DrawLine(Pen(cDark, 1.0), x, y, x + w, y);
+            y += 6;
+
+            // Naslov bloka
+            g.DrawString("PODACI FISKALIZACIJE", FB(8), Brush(cMid),
+                Rect(x, y, w, 12), FmtL());
+            y += 14;
+
+            double labelW = 80;
+
+            // ZKI (Zaštitni kod izdavatelja) — uvijek prisutan ako je generiran
+            if (!string.IsNullOrWhiteSpace(racun.ZKI))
+            {
+                g.DrawString("ZKI:", FB(8), Brush(cMid),
+                    Rect(x, y, labelW, 11), FmtL());
+                g.DrawString(racun.ZKI.ToUpper(), FN(8), Brush(cDark),
+                    Rect(x + labelW + 2, y, w - labelW - 2, 11), FmtL());
+                y += 13;
+            }
+
+            // JIR (Jedinstveni identifikator računa) — od CIS-a
+            if (!string.IsNullOrWhiteSpace(racun.JIR))
+            {
+                g.DrawString("JIR:", FB(8), Brush(cMid),
+                    Rect(x, y, labelW, 11), FmtL());
+                g.DrawString(racun.JIR, FN(8), Brush(cDark),
+                    Rect(x + labelW + 2, y, w - labelW - 2, 11), FmtL());
+                y += 13;
+            }
+            else
+            {
+                // Ako nema JIR-a — upozorenje (naknadna fiskalizacija)
+                g.DrawString("JIR:", FB(8), Brush(cMid),
+                    Rect(x, y, labelW, 11), FmtL());
+                g.DrawString("NIJE FISKALIZIRAN — potrebno fiskalizirati u roku 48h",
+                    FI(7.5), Brush(XColor.FromArgb(180, 0, 0)),
+                    Rect(x + labelW + 2, y, w - labelW - 2, 11), FmtL());
+                y += 13;
+            }
+
+            // Vrsta prodaje i način plaćanja
+            if (!string.IsNullOrWhiteSpace(racun.VrstaProdaje))
+            {
+                string vrstaTekst = racun.VrstaProdaje == "B2B"
+                    ? "eRačun B2B (F 2.0)"
+                    : "B2C (F 1.0)";
+
+                y += 13;
+            }
+
+            // eRačun referenca (B2B)
+            if (racun.VrstaProdaje == "B2B" && !string.IsNullOrWhiteSpace(racun.EracunReferenca))
+            {
+                g.DrawString("eRačun ref:", FB(8), Brush(cMid),
+                    Rect(x, y, labelW, 11), FmtL());
+                g.DrawString(racun.EracunReferenca, FN(7.5), Brush(cDark),
+                    Rect(x + labelW + 2, y, w - labelW - 2, 11), FmtL());
+                y += 13;
+            }
+
+            // QR kod — generiramo jednostavni text QR (URL za provjeru)
+            // Porezna uprava: https://porezna-uprava.gov.hr/provjera-racuna
+            if (!string.IsNullOrWhiteSpace(racun.JIR))
+            {
+                y += 4;
+                CrtajQrBlok(g, x, y, racun);
+                y += 52; // visina QR bloka
+            }
+
+            y += 4;
+            g.DrawLine(Pen(cLight, 0.6), x, y, x + w, y);
+            return y;
+        }
+
+        /// <summary>
+        /// Crtanje QR koda — placeholder kvadrat s URL-om za provjeru.
+        /// Za pravi QR potreban je QRCoder NuGet paket (QRCoder.PdfSharp).
+        /// </summary>
+        private static void CrtajQrBlok(XGraphics g, double x, double y, Racun racun)
+        {
+            // Ispravan format za PU provjeru računa
+            string jir = racun.JIR ?? "";
+            string datum = racun.DatumRacuna.ToString("yyyyMMdd");
+            string iznos = racun.UkupnoSaPdv.ToString("F2", CultureInfo.InvariantCulture);
+
+            string url = $"https://porezna-uprava.gov.hr/fr?jir={jir}&datv={datum}&iznos={iznos}";
+
+            try
+            {
+                using (var qrGen = new QRCodeGenerator())
+                {
+                    var qrData = qrGen.CreateQrCode(url, QRCodeGenerator.ECCLevel.Q);
+                    var qrCode = new QRCode(qrData);
+                    using (System.Drawing.Bitmap bmp = qrCode.GetGraphic(4,
+                        System.Drawing.Color.Black,
+                        System.Drawing.Color.White, true))
+                    {
+                        using (var ms = new MemoryStream())
+                        {
+                            bmp.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
+                            ms.Position = 0;
+                            XImage qrImage = XImage.FromStream(ms);
+                            g.DrawImage(qrImage, new XRect(x, y, 46, 46));
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                g.DrawRectangle(Pen(cDark, 1.2), x, y, 46, 46);
+                g.DrawString("QR", FN(7), Brush(cMid), Rect(x, y + 16, 46, 14),
+                    new XStringFormat { Alignment = XStringAlignment.Center });
+            }
+
         }
 
         // ════════════════════════════════════════════════════════════════════

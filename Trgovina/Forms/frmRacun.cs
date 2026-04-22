@@ -18,6 +18,8 @@ namespace Trgovina.Forms
         private readonly bool _editMode;
         private List<RacunStavka> _stavke = new List<RacunStavka>();
         private List<Prodavac> _prodavaci = new List<Prodavac>();
+        private string _nacinPlacanja = "T";
+        private string _vrstaProdaje = "B2C";
 
         // Odabrani kupac (iz popup-a)
         private Partner _odabraniKupac = null;
@@ -27,6 +29,10 @@ namespace Trgovina.Forms
         private DateTimePicker dtpDatumRacuna, dtpDatumValute;
         private Guna2ComboBox cmbProdavac;
         private Guna2ToggleSwitch tglPlaceno;
+        private Guna2ComboBox cmbNacinPlacanja;
+        private Guna2ToggleSwitch tglVrstaProdaje;
+        private Label lblVrstaProdajeInfo;
+        private Label lblFiskalStatus;
 
         // Kupac picker
         private Guna2TextBox txtKupacPrikaz;
@@ -161,7 +167,7 @@ namespace Trgovina.Forms
             pnlScroll.BackColor = AppColors.Background;
             this.Controls.Add(pnlScroll);
 
-            const int zaglavljeH = 200;
+            const int zaglavljeH = 300;
             Guna2Panel cardZaglavlje = KreirajCard(pnlScroll, 15, 48, 0, zaglavljeH);
             cardZaglavlje.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             this.SizeChanged += (s, e) => cardZaglavlje.Width = pnlScroll.ClientSize.Width - 30;
@@ -185,6 +191,121 @@ namespace Trgovina.Forms
             cardStavke.Height = this.ClientSize.Height - pnlDno.Height - stavkeTop - 10;
 
             KreirajStavkeCard(cardStavke);
+        }
+
+        private void KreirajZaglavljeCardFiskal(Guna2Panel card, int yPocetni)
+        {
+            // Red 3: Način plaćanja + Vrsta prodaje
+            int y = yPocetni;
+            int x1 = 15, x2 = 255, x3 = 460;
+            int inW = 175, inH = 34;
+
+            DodajLabel(card, "Način plaćanja *", x1, y + 5);
+            DodajLabel(card, "Vrsta prodaje", x2, y + 5);
+            DodajLabel(card, "Status fiskalizacije", x3, y + 5);
+            y += 30;
+
+            // Combo: Način plaćanja
+            cmbNacinPlacanja = DodajComboBox(card, x1, y, inW);
+            cmbNacinPlacanja.Items.Add(new NacinPlacanjaItem("T", "💳  Transakcijski račun"));
+            cmbNacinPlacanja.Items.Add(new NacinPlacanjaItem("G", "💵  Gotovina"));
+            cmbNacinPlacanja.Items.Add(new NacinPlacanjaItem("K", "💳  Kartica"));
+            cmbNacinPlacanja.Items.Add(new NacinPlacanjaItem("O", "📋  Ostalo"));
+            cmbNacinPlacanja.SelectedIndex = 0;
+            cmbNacinPlacanja.SelectedIndexChanged += (s, e) =>
+            {
+                if (cmbNacinPlacanja.SelectedItem is NacinPlacanjaItem item)
+                    _nacinPlacanja = item.Kod;
+            };
+
+            // Toggle: B2C / B2B
+            Panel pnlVrsta = new Panel();
+            pnlVrsta.Location = new Point(x2, y);
+            pnlVrsta.Size = new Size(190, inH);
+            pnlVrsta.BackColor = Color.Transparent;
+            card.Controls.Add(pnlVrsta);
+
+            tglVrstaProdaje = new Guna2ToggleSwitch();
+            tglVrstaProdaje.Size = new Size(52, 26);
+            tglVrstaProdaje.Location = new Point(0, 4);
+            tglVrstaProdaje.Checked = false; // false = B2C
+            tglVrstaProdaje.CheckedState.FillColor = Color.FromArgb(41, 128, 185);
+            tglVrstaProdaje.UncheckedState.FillColor = Color.FromArgb(39, 174, 96);
+            pnlVrsta.Controls.Add(tglVrstaProdaje);
+
+            lblVrstaProdajeInfo = new Label();
+            lblVrstaProdajeInfo.Text = "🏪 B2C (Fisk. 1.0)";
+            lblVrstaProdajeInfo.Font = new Font("Segoe UI", 8.5f, System.Drawing.FontStyle.Bold);
+            lblVrstaProdajeInfo.ForeColor = Color.FromArgb(39, 174, 96);
+            lblVrstaProdajeInfo.Location = new Point(58, 7);
+            lblVrstaProdajeInfo.AutoSize = true;
+            pnlVrsta.Controls.Add(lblVrstaProdajeInfo);
+
+            tglVrstaProdaje.CheckedChanged += (s, e) =>
+            {
+                if (tglVrstaProdaje.Checked)
+                {
+                    _vrstaProdaje = "B2B";
+                    lblVrstaProdajeInfo.Text = "🏢 B2B (eRačun 2.0)";
+                    lblVrstaProdajeInfo.ForeColor = Color.FromArgb(41, 128, 185);
+                }
+                else
+                {
+                    _vrstaProdaje = "B2C";
+                    lblVrstaProdajeInfo.Text = "🏪 B2C (Fisk. 1.0)";
+                    lblVrstaProdajeInfo.ForeColor = Color.FromArgb(39, 174, 96);
+                }
+            };
+
+            // Label: Status fiskalizacije (prikaz nakon knjiženja)
+            lblFiskalStatus = new Label();
+            lblFiskalStatus.Text = _editMode && !string.IsNullOrEmpty(_racun?.JIR)
+                ? $"✅ JIR: {_racun.JIR}"
+                : "⏳ Još nije fiskaliziran";
+            lblFiskalStatus.Font = new Font("Segoe UI", 8f);
+            lblFiskalStatus.ForeColor = _editMode && !string.IsNullOrEmpty(_racun?.JIR)
+                ? Color.FromArgb(39, 174, 96)
+                : Color.FromArgb(120, 120, 130);
+            lblFiskalStatus.Location = new Point(x3, y + 8);
+            lblFiskalStatus.AutoSize = true;
+            card.Controls.Add(lblFiskalStatus);
+        }
+
+        // ═══════════════════════════════════════════════════════════════════
+        //  POPUNI FISKAL POLJA — pozovi na kraju PopuniPolja()
+        // ═══════════════════════════════════════════════════════════════════
+        private void PopuniFiskalPolja()
+        {
+            if (_racun == null) return;
+
+            // Vrsta prodaje
+            _vrstaProdaje = _racun.VrstaProdaje ?? "B2C";
+            if (tglVrstaProdaje != null)
+                tglVrstaProdaje.Checked = _vrstaProdaje == "B2B";
+
+            // Način plaćanja
+            _nacinPlacanja = _racun.NacinPlacanja ?? "T";
+            if (cmbNacinPlacanja != null)
+            {
+                foreach (var item in cmbNacinPlacanja.Items)
+                    if (item is NacinPlacanjaItem np && np.Kod == _nacinPlacanja)
+                    { cmbNacinPlacanja.SelectedItem = item; break; }
+            }
+
+            // Status fiskalizacije
+            if (lblFiskalStatus != null)
+            {
+                if (!string.IsNullOrEmpty(_racun.JIR))
+                {
+                    lblFiskalStatus.Text = $"✅ JIR: {_racun.JIR}";
+                    lblFiskalStatus.ForeColor = Color.FromArgb(39, 174, 96);
+                }
+                else if (_racun.FiskalizacijaStatus == "GREŠKA")
+                {
+                    lblFiskalStatus.Text = $"❌ Greška: {_racun.FiskalizacijaGreska}";
+                    lblFiskalStatus.ForeColor = Color.FromArgb(192, 57, 43);
+                }
+            }
         }
 
         // ══════════════════════════════════════════════════════════════════════
@@ -265,6 +386,8 @@ namespace Trgovina.Forms
 
             txtNapomena = DodajTextBox(card, x4, y, inW + 195);
             txtNapomena.PlaceholderText = "Opcionalna napomena...";
+
+            KreirajZaglavljeCardFiskal(card, y + 60);
         }
 
         // ══════════════════════════════════════════════════════════════════════
@@ -486,6 +609,8 @@ namespace Trgovina.Forms
             foreach (var item in cmbProdavac.Items)
                 if (item is Prodavac pr && pr.Id == _racun.ProdavacId)
                 { cmbProdavac.SelectedItem = item; break; }
+
+            PopuniFiskalPolja();
         }
 
         private void PopuniGridStavke()
@@ -671,15 +796,28 @@ namespace Trgovina.Forms
         //  SPREMI
         // ══════════════════════════════════════════════════════════════════════
 
-        private void BtnSpremi_Click(object sender, EventArgs e)
+        private async void BtnSpremi_Click(object sender, EventArgs e)
         {
             if (!Validiraj()) return;
+
+            btnSpremi.Enabled = false;
+            btnSpremi.Text = "⏳  Obrađujem...";
+
             try
             {
                 Racun r = KreirajRacunIzFormi();
+
+                // Spremi račun u bazu
                 if (_editMode) { r.Id = _racun.Id; RacuniRepository.AzurirajRacun(r); }
-                else { RacuniRepository.DodajRacun(r); }
-                DialogResult = DialogResult.OK;
+                else { r.Id = RacuniRepository.DodajRacun(r); }
+
+                // ── Fiskalizacija ──────────────────────────────────────────
+                if (!_editMode || string.IsNullOrEmpty(_racun?.JIR))
+                {
+                    await IzvrsiFiskalizaciju(r);
+                }
+
+                DialogResult = System.Windows.Forms.DialogResult.OK;
                 Close();
             }
             catch (Exception ex)
@@ -687,7 +825,87 @@ namespace Trgovina.Forms
                 MessageBox.Show("Greška pri spremanju:\n" + ex.Message,
                     "Greška", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+            finally
+            {
+                btnSpremi.Enabled = true;
+                btnSpremi.Text = _editMode ? "💾  Spremi izmjene" : "✔  Kreiraj račun";
+            }
         }
+
+        private async System.Threading.Tasks.Task IzvrsiFiskalizaciju(Racun r)
+        {
+            if (r.VrstaProdaje == "B2C")
+            {
+                // ── Fiskalizacija 1.0 (B2C → CIS) ─────────────────────────
+                btnSpremi.Text = "📡  Šaljem na CIS...";
+
+                var rezultat = await FiskalizacijaService.FiskalizirajAsync(r);
+
+                if (rezultat.Uspjeh)
+                {
+                    RacuniRepository.SpremiJirZki(r.Id, rezultat.JIR, rezultat.ZKI, "FISKALIZIRAN", null);
+
+                    r.JIR = rezultat.JIR;
+                    r.ZKI = rezultat.ZKI;
+                    r.FiskalizacijaVrijeme = DateTime.Now.ToString("dd.MM.yyyy HH:mm:ss");
+                    r.VrstaProdaje = _vrstaProdaje;
+                    r.NacinPlacanja = _nacinPlacanja;
+
+                    // Ponudi ispis
+                    var pitanje = MessageBox.Show(
+                        $"✅ Račun uspješno fiskaliziran!\n\nJIR: {rezultat.JIR}\nZKI: {rezultat.ZKI}\n\nŽelite li ispisati/spremiti PDF?",
+                        "Fiskalizacija", MessageBoxButtons.YesNo, MessageBoxIcon.Information);
+
+                    if (pitanje == DialogResult.Yes)
+                        RacunPdfHelper.SpremiPdf(r);
+                }
+                else
+                {
+                    // Spremi grešku — račun je knjižen ali nije fiskaliziran
+                    RacuniRepository.SpremiJirZki(r.Id, null, rezultat.ZKI,
+                        "GREŠKA", rezultat.Poruka);
+
+                    var odgovor = MessageBox.Show(
+                        $"⚠️ Račun je knjižen, ali fiskalizacija nije uspjela:\n\n{rezultat.Poruka}\n\n" +
+                        $"ZKI je izračunat i račun se može ispisati.\n" +
+                        $"Fiskalizaciju je potrebno ponoviti u roku 48 sati!\n\n" +
+                        $"Željite li otvoriti postavke fiskalizacije?",
+                        "Greška fiskalizacije",
+                        MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+
+                    // Ako postoji ZKI, spremi ga za naknadnu fiskalizaciju
+                    if (!string.IsNullOrEmpty(rezultat.ZKI))
+                        RacuniRepository.SpremiJirZki(r.Id, null, rezultat.ZKI, "GREŠKA", rezultat.Poruka);
+                }
+            }
+            else // B2B
+            {
+                // ── Fiskalizacija 2.0 (B2B → eRačun) ─────────────────────
+                btnSpremi.Text = "📧  Šaljem eRačun...";
+
+                var rezultat = await FiskalizacijaService.PosaljiEracunAsync(r);
+
+                if (rezultat.Uspjeh)
+                {
+                    RacuniRepository.SpremiEracunStatus(r.Id, "POSLANO",
+                        rezultat.EracunReferenca, null);
+
+                    MessageBox.Show(
+                        $"✅ eRačun je uspješno poslan!\n\nReferenca: {rezultat.EracunReferenca}",
+                        "eRačun", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                else
+                {
+                    RacuniRepository.SpremiEracunStatus(r.Id, "GREŠKA", null, rezultat.Poruka);
+
+                    MessageBox.Show(
+                        $"⚠️ eRačun nije poslan:\n\n{rezultat.Poruka}",
+                        "eRačun — Greška",
+                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+            }
+        }
+
 
         private bool Validiraj()
         {
@@ -716,13 +934,23 @@ namespace Trgovina.Forms
 
         private Racun KreirajRacunIzFormi()
         {
-            int? prodavacId = (cmbProdavac.SelectedItem is Prodavac pr && pr.Id > 0) ? pr.Id : (int?)null;
+            int? prodavacId = (cmbProdavac.SelectedItem is Prodavac pr && pr.Id > 0)
+                ? pr.Id : (int?)null;
+
+            string nacinPlac = "T";
+            if (cmbNacinPlacanja?.SelectedItem is NacinPlacanjaItem np)
+                nacinPlac = np.Kod;
+
             return new Racun
             {
                 BrojRacuna = txtBrojRacuna.Text.Trim(),
                 DatumRacuna = dtpDatumRacuna.Value.Date,
                 DatumValute = dtpDatumValute.Value.Date,
                 KupacId = _odabraniKupac.Id,
+                NazivKupca = _odabraniKupac.Naziv,
+                OibKupca = _odabraniKupac.OIB,
+                AdresaKupca = _odabraniKupac.Adresa,
+                PdvIdKupca = _odabraniKupac.OIB,
                 ProdavacId = prodavacId,
                 UkupnoBezPdv = _stavke.Sum(s => s.IznosBezPdv),
                 UkupnoPdv = _stavke.Sum(s => s.IznosPdv),
@@ -730,7 +958,12 @@ namespace Trgovina.Forms
                 Placeno = tglPlaceno.Checked,
                 Status = tglPlaceno.Checked ? "PLAĆENO" : "KREIRAN",
                 Napomena = txtNapomena.Text.Trim(),
-                Stavke = _stavke
+                Stavke = _stavke,
+                // Fiskalizacija
+                NacinPlacanja = nacinPlac,
+                VrstaProdaje = _vrstaProdaje,
+                FiskalizacijaStatus = "NIJE_POSLANO",
+                EracunStatus = "NIJE_POSLANO"
             };
         }
 
@@ -825,6 +1058,14 @@ namespace Trgovina.Forms
         {
             ctrl.Focus();
             MessageBox.Show(poruka, "Validacija", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+
+        public class NacinPlacanjaItem
+        {
+            public string Kod { get; }
+            private readonly string _prikaz;
+            public NacinPlacanjaItem(string kod, string prikaz) { Kod = kod; _prikaz = prikaz; }
+            public override string ToString() => _prikaz;
         }
     }
 }

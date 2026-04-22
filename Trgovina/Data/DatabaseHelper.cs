@@ -101,5 +101,37 @@ namespace Trgovina.Data
                 return false;
             }
         }
+
+        /// <summary>
+        /// Spremi više ključ/vrijednost parova odjednom (INSERT OR REPLACE).
+        /// </summary>
+        public static void SpremiPostavke(Dictionary<string, string> postavke)
+        {
+            using (var con = new SqlConnection(ConnectionString))
+            {
+                con.Open();
+                using (var trans = con.BeginTransaction())
+                {
+                    foreach (var kvp in postavke)
+                    {
+                        string sql = @"MERGE Postavke AS target
+                           USING (VALUES (@k, @v)) AS source (Kljuc, Vrijednost)
+                           ON target.Kljuc = source.Kljuc
+                           WHEN MATCHED THEN 
+                               UPDATE SET Vrijednost = source.Vrijednost
+                           WHEN NOT MATCHED THEN 
+                               INSERT (Kljuc, Vrijednost) VALUES (source.Kljuc, source.Vrijednost);";
+                        using (var cmd = new SqlCommand(sql, con, trans))
+                        {
+                            cmd.Parameters.AddWithValue("@k", kvp.Key);
+                            cmd.Parameters.AddWithValue("@v", kvp.Value ?? "");
+                            cmd.ExecuteNonQuery();
+                        }
+                    }
+                    trans.Commit();
+                }
+            }
+        }
+
     }
 }

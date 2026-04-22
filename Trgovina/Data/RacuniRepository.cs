@@ -28,7 +28,10 @@ namespace Trgovina.Data
                        r.ukupno_bez_pdv, r.ukupno_pdv, r.ukupno_sa_pdv,
                        r.placeno, r.datum_placanja,
                        r.proknjizeno, r.datum_knjizenja,r.datum_isporuke,
-                       r.status, r.napomena, r.datum_kreiranja
+                       r.status, r.napomena, r.datum_kreiranja,
+                       r.JIR, r.ZKI, r.NacinPlacanja, r.VrstaProdaje,
+                       r.FiskalizacijaStatus, r.FiskalizacijaVrijeme, r.FiskalizacijaGreska,
+                       r.EracunStatus, r.EracunReferenca
                 FROM racuni r
                 INNER JOIN partneri p   ON p.id  = r.kupac_id
                 LEFT  JOIN prodavaci pr ON pr.id = r.prodavac_id
@@ -78,7 +81,10 @@ namespace Trgovina.Data
                        r.ukupno_bez_pdv, r.ukupno_pdv, r.ukupno_sa_pdv,
                        r.placeno, r.datum_placanja, r.datum_isporuke,
                        r.proknjizeno, r.datum_knjizenja,
-                       r.status, r.napomena, r.datum_kreiranja
+                       r.status, r.napomena, r.datum_kreiranja,
+                       r.JIR, r.ZKI, r.NacinPlacanja, r.VrstaProdaje,
+                       r.FiskalizacijaStatus, r.FiskalizacijaVrijeme, r.FiskalizacijaGreska,
+                       r.EracunStatus, r.EracunReferenca
                 FROM racuni r
                 INNER JOIN partneri p   ON p.id  = r.kupac_id
                 LEFT  JOIN prodavaci pr ON pr.id = r.prodavac_id
@@ -140,15 +146,17 @@ namespace Trgovina.Data
         public static int DodajRacun(Racun r)
         {
             string sql = @"
-                INSERT INTO racuni
-                    (broj_racuna, datum_racuna, datum_valute, kupac_id, prodavac_id,
-                     ukupno_bez_pdv, ukupno_pdv, ukupno_sa_pdv,
-                     placeno, proknjizeno, status, napomena)
-                VALUES
-                    (@broj, @datum, @valuta, @kupac, @prodavac,
-                     @bezPdv, @pdv, @saPdv,
-                     @placeno, 0, @status, @napomena);
-                SELECT SCOPE_IDENTITY();";
+            INSERT INTO racuni
+                (broj_racuna, datum_racuna, datum_valute, kupac_id, prodavac_id,
+                 ukupno_bez_pdv, ukupno_pdv, ukupno_sa_pdv,
+                 placeno, proknjizeno, status, napomena,
+                 NacinPlacanja, VrstaProdaje)
+            VALUES
+                (@broj, @datum, @valuta, @kupac, @prodavac,
+                 @bezPdv, @pdv, @saPdv,
+                 @placeno, 0, @status, @napomena,
+                 @nacinPlac, @vrstaProd);
+            SELECT SCOPE_IDENTITY();";
 
             using (var conn = new SqlConnection(DatabaseHelper.ConnectionString))
             {
@@ -212,7 +220,9 @@ namespace Trgovina.Data
                     ukupno_sa_pdv  = @saPdv,
                     placeno        = @placeno,
                     status         = @status,
-                    napomena       = @napomena
+                    napomena       = @napomena,
+                    NacinPlacanja  = @nacinPlac,
+                    VrstaProdaje   = @vrstaProd
                 WHERE id = @id";
 
             using (var conn = new SqlConnection(DatabaseHelper.ConnectionString))
@@ -467,6 +477,15 @@ namespace Trgovina.Data
                 PdvIdKupca = "HR" + rdr["oib_kupca"].ToString(),
                 DatumIsporuke = rdr["datum_isporuke"] == DBNull.Value ? (DateTime?)null
                                     : rdr.GetDateTime(rdr.GetOrdinal("datum_isporuke")),
+                JIR = rdr["JIR"] == DBNull.Value ? null : rdr["JIR"].ToString(),
+                ZKI = rdr["ZKI"] == DBNull.Value ? null : rdr["ZKI"].ToString(),
+                NacinPlacanja = rdr["NacinPlacanja"] == DBNull.Value ? "T" : rdr["NacinPlacanja"].ToString(),
+                VrstaProdaje = rdr["VrstaProdaje"] == DBNull.Value ? "B2C" : rdr["VrstaProdaje"].ToString(),
+                FiskalizacijaStatus = rdr["FiskalizacijaStatus"] == DBNull.Value ? null : rdr["FiskalizacijaStatus"].ToString(),
+                FiskalizacijaVrijeme = rdr["FiskalizacijaVrijeme"] == DBNull.Value ? null : rdr["FiskalizacijaVrijeme"].ToString(),
+                FiskalizacijaGreska = rdr["FiskalizacijaGreska"] == DBNull.Value ? null : rdr["FiskalizacijaGreska"].ToString(),
+                EracunStatus = rdr["EracunStatus"] == DBNull.Value ? null : rdr["EracunStatus"].ToString(),
+                EracunReferenca = rdr["EracunReferenca"] == DBNull.Value ? null : rdr["EracunReferenca"].ToString(),
 
             };
         }
@@ -508,6 +527,8 @@ namespace Trgovina.Data
             cmd.Parameters.AddWithValue("@status", r.Status ?? "KREIRAN");
             cmd.Parameters.AddWithValue("@napomena", string.IsNullOrEmpty(r.Napomena)
                                                         ? (object)DBNull.Value : r.Napomena);
+            cmd.Parameters.AddWithValue("@nacinPlac", r.NacinPlacanja ?? "T");
+            cmd.Parameters.AddWithValue("@vrstaProd", r.VrstaProdaje ?? "B2C");
         }
 
 
@@ -580,5 +601,57 @@ namespace Trgovina.Data
                 cmd.ExecuteNonQuery();
             }
         }
+        public static void SpremiJirZki(int racunId, string jir, string zki,
+            string status, string greska)
+        {
+            using (var conn = new SqlConnection(DatabaseHelper.ConnectionString))
+            {
+                conn.Open();
+                string sql = @"UPDATE racuni SET
+                                   JIR                   = @jir,
+                                   ZKI                   = @zki,
+                                   FiskalizacijaStatus   = @status,
+                                   FiskalizacijaVrijeme  = @vrijemeStr,
+                                   FiskalizacijaGreska   = @greska
+                               WHERE id = @id";
+                using (var cmd = new SqlCommand(sql, conn))
+                {
+                    cmd.Parameters.AddWithValue("@id", racunId);
+                    cmd.Parameters.AddWithValue("@jir", (object)jir ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@zki", (object)zki ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@status", status ?? "GREŠKA");
+                    cmd.Parameters.AddWithValue("@vrijemeStr",
+                        DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+                    cmd.Parameters.AddWithValue("@greska", (object)greska ?? DBNull.Value);
+                    cmd.ExecuteNonQuery();
+                }
+            }
+        }
+
+        public static void SpremiEracunStatus(int racunId, string status,
+            string referenca, string greska)
+        {
+            using (var con = new SqlConnection(DatabaseHelper.ConnectionString))
+            {
+                con.Open();
+                string sql = @"UPDATE racuni SET
+                                   EracunStatus     = @status,
+                                   EracunVrijeme    = @vrijemeStr,
+                                   EracunReferenca  = @referenca,
+                                   EracunGreska     = @greska
+                               WHERE id = @id";
+                using (var cmd = new SqlCommand(sql, con))
+                {
+                    cmd.Parameters.AddWithValue("@id", racunId);
+                    cmd.Parameters.AddWithValue("@status", status ?? "GREŠKA");
+                    cmd.Parameters.AddWithValue("@vrijemeStr",
+                        DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+                    cmd.Parameters.AddWithValue("@referenca", (object)referenca ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@greska", (object)greska ?? DBNull.Value);
+                    cmd.ExecuteNonQuery();
+                }
+            }
+        }
+
     }
 }
