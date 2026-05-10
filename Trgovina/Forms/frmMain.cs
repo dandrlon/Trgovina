@@ -205,40 +205,29 @@ namespace Trgovina
             var btnOtpremnice = AddNavButton("📦  Otpremnice", yPos,
                 () => LoadUserControl(new OtpremnicaControl())); yPos += 50;
             var btnIzvjestaji = AddNavButton("📊  Izvještaji", yPos,
-                () => LoadUserControl(new IzvjestajiControl())); yPos += 50;
+                () => LoadUserControl(new IzvjestajiControl())); yPos += 80;
 
             // ── Separator: ŠIFARNICI ───────────────────────────────────────────────
-            DodajSeparatorSidebar("ŠIFARNICI", yPos); yPos += 40;
+            DodajSeparatorSidebar("ŠIFARNICI", yPos); yPos += 50;
 
             AddNavButton("🗂️  Grupe artikala", yPos,
                 () => LoadUserControl(new GrupeArtikalaControl())); yPos += 50;
             AddNavButton("🧾  PDV stope", yPos,
                 () => LoadUserControl(new PdvStopeControl())); yPos += 50;
             AddNavButton("📐  Jedinice mjere", yPos,
-                () => LoadUserControl(new JediniceMjereControl())); yPos += 50;
+                () => LoadUserControl(new JediniceMjereControl())); yPos += 80;
 
             // ── Separator: ADMINISTRACIJA ──────────────────────────────────────────
-            DodajSeparatorSidebar("ADMINISTRACIJA", yPos); yPos += 40;
+            DodajSeparatorSidebar("ADMINISTRACIJA", yPos); yPos += 50;
 
-            AddNavButton("📡  Fiskalizacija", yPos,
+            AddNavButton("⚙️  Postavke", yPos,
                 () => LoadUserControl(new PostavkeControl())); yPos += 50;
 
-            Guna2Button btnSettings = new Guna2Button();
-            btnSettings.Text = "⚙️  Postavke";
-            btnSettings.Size = new Size(230, 46);
-            btnSettings.Location = new Point(10, yPos += 50);
-            btnSettings.TextAlign = HorizontalAlignment.Left;
-            btnSettings.FillColor = AppColors.Primary;
-            btnSettings.HoverState.FillColor = AppColors.PrimaryLight;
-            btnSettings.Font = AppFonts.Navigation;
-            btnSettings.ForeColor = AppColors.TextWhite;
-            btnSettings.BorderRadius = 8;
-            pnlSidebar.Controls.Add(btnSettings);
 
             Guna2Button btnLogout = new Guna2Button();
             btnLogout.Text = "🚪  Odjava";
             btnLogout.Size = new Size(230, 46);
-            btnLogout.Location = new Point(10, yPos += 100);
+            btnLogout.Location = new Point(10, yPos);
             btnLogout.TextAlign = HorizontalAlignment.Left;
             btnLogout.FillColor = AppColors.Primary;
             btnLogout.HoverState.FillColor = AppColors.Danger;

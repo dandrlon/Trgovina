@@ -1,23 +1,42 @@
 ﻿using Guna.UI2.WinForms;
 using System;
+using System.Collections.Generic;
 using System.Drawing;
+using System.Globalization;
 using System.Windows.Forms;
+using System.Windows.Forms.DataVisualization.Charting;
+using Trgovina.Data;
+using Trgovina.Data.Models;
 using Trgovina.Utils;
 
 namespace Trgovina.UserControls
 {
     public partial class DashboardControl : UserControl
     {
+        // ── Polja ────────────────────────────────────────────────────────────────
+        private readonly DashboardRepository _repo = new DashboardRepository(DatabaseHelper.ConnectionString);
+        private readonly CultureInfo _hr = new CultureInfo("hr-HR");
+
+        private readonly Label[] _lblVrijednosti = new Label[4];
+        private Guna2DataGridView _dgvRacuni;
+        private Chart _chartProdaja;
+
         private FlowLayoutPanel flowStats;
         private Panel pnlBottomContainer;
         private Guna2Panel pnlRecentOrders;
-        private Guna2Panel pnlQuickActions;
+        private Guna2Panel pnlGrafikon;
 
+        // ── Konstruktor ──────────────────────────────────────────────────────────
         public DashboardControl()
         {
             InitializeComponent();
             InitializeUI();
+            UcitajPodatke();
         }
+
+        // ══════════════════════════════════════════════════════════════════════════
+        //  INICIJALIZACIJA UI
+        // ══════════════════════════════════════════════════════════════════════════
 
         private void InitializeUI()
         {
@@ -25,10 +44,75 @@ namespace Trgovina.UserControls
             this.BackColor = AppColors.Background;
             this.Padding = new Padding(15, 10, 15, 15);
 
-            // Redoslijed: Fill prvo, Top odozdo prema gore
-            KreirajDonjePanele();  // Fill
-            KreirajStatKartice();  // Top
-            KreirajHeader();       // Top (prikazuje se na vrhu)
+            KreirajDonjePanele();
+            KreirajStatKartice();
+            KreirajHeader();
+        }
+
+        // ══════════════════════════════════════════════════════════════════════════
+        //  UČITAVANJE PODATAKA IZ BAZE
+        // ══════════════════════════════════════════════════════════════════════════
+
+        private void UcitajPodatke()
+        {
+            try
+            {
+                var stats = _repo.DohvatiStats();
+                var racuni = _repo.DohvatiNedavneRacune();
+                var prodaja = _repo.DohvatiProdajuPo30Dana();
+
+                OsvjeziKartice(stats);
+                OsvjeziDGV(racuni);
+                OsvjeziGrafikon(prodaja);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Greška pri učitavanju dashboarda:\n" + ex.Message,
+                                "Greška", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void OsvjeziKartice(DashboardStats s)
+        {
+            _lblVrijednosti[0].Text = s.UkupnaProdajaMjesec.ToString("N2", _hr) + " €";
+            _lblVrijednosti[1].Text = s.BrojRacunaDanas.ToString();
+            _lblVrijednosti[2].Text = s.VrijednostRobe.ToString("N2", _hr) + " €";
+            _lblVrijednosti[3].Text = s.AktivniPartneri.ToString();
+        }
+
+        private void OsvjeziDGV(List<NedavniRacunRow> racuni)
+        {
+            _dgvRacuni.Rows.Clear();
+            foreach (var r in racuni)
+            {
+                bool placeno = r.Status == "PLAĆENO";
+                int idx = _dgvRacuni.Rows.Add(
+                    r.BrojRacuna,
+                    r.Partner,
+                    r.Iznos.ToString("N2", _hr) + " €",
+                    placeno ? "✔ Plaćeno" : "⏱ Čeka"
+                );
+                _dgvRacuni.Rows[idx].Cells["colStatus"].Style.ForeColor =
+                    placeno ? Color.FromArgb(46, 213, 115) : Color.FromArgb(241, 196, 15);
+            }
+        }
+
+        private void OsvjeziGrafikon(Dictionary<DateTime, decimal> prodaja)
+        {
+            _chartProdaja.Series["Prodaja"].Points.Clear();
+
+            decimal kumulativ = 0m;
+            for (int i = 29; i >= 0; i--)
+            {
+                DateTime dan = DateTime.Today.AddDays(-i);
+                decimal iznos = prodaja.ContainsKey(dan) ? prodaja[dan] : 0m;
+                kumulativ += iznos;
+
+                DataPoint point = new DataPoint();
+                point.SetValueXY(dan, (double)kumulativ);
+                point.AxisLabel = dan.ToString("dd.MM", _hr);
+                _chartProdaja.Series["Prodaja"].Points.Add(point);
+            }
         }
 
         // ══════════════════════════════════════════════════════════════════════════
@@ -50,7 +134,7 @@ namespace Trgovina.UserControls
             lblNaslov.AutoSize = true;
 
             Label lblDatum = new Label();
-            lblDatum.Text = DateTime.Now.ToString("dddd, dd. MMMM yyyy.");
+            lblDatum.Text = DateTime.Now.ToString("dddd, dd. MMMM yyyy.", _hr);
             lblDatum.Font = AppFonts.Regular;
             lblDatum.ForeColor = AppColors.TextSecondary;
             lblDatum.AutoSize = true;
@@ -69,7 +153,7 @@ namespace Trgovina.UserControls
         {
             flowStats = new FlowLayoutPanel();
             flowStats.Dock = DockStyle.Top;
-            flowStats.Height = 156; // 140 + 16 margin
+            flowStats.Height = 156;
             flowStats.FlowDirection = FlowDirection.LeftToRight;
             flowStats.WrapContents = true;
             flowStats.AutoScroll = false;
@@ -77,26 +161,23 @@ namespace Trgovina.UserControls
             flowStats.BackColor = AppColors.Background;
             flowStats.Resize += FlowStats_Resize;
 
-            DodajStatKarticu("Ukupna prodaja", "45.250,00 €", "📈 +12.5%", Color.FromArgb(46, 213, 115));
-            DodajStatKarticu("Računi danas", "23", "📦 +5", Color.FromArgb(52, 152, 219));
-            DodajStatKarticu("Vrijednost robe", "143.450,00 €", "📊 -3.000 €", Color.FromArgb(155, 89, 182));
-            DodajStatKarticu("Aktivni partneri", "89", "👥 +2", Color.FromArgb(241, 196, 15));
+            DodajStatKarticu("Ukupna prodaja", "...", "📈", Color.FromArgb(46, 213, 115), 0);
+            DodajStatKarticu("Računi danas", "...", "📦", Color.FromArgb(52, 152, 219), 1);
+            DodajStatKarticu("Vrijednost robe", "...", "📊", Color.FromArgb(155, 89, 182), 2);
+            DodajStatKarticu("Aktivni partneri", "...", "👥", Color.FromArgb(241, 196, 15), 3);
 
             this.Controls.Add(flowStats);
         }
+
         private void FlowStats_Resize(object sender, EventArgs e)
         {
-            int gap = 0; // margin koji koristiš
-            int totalGap = gap * 3; // 4 kartice -> 3 razmaka
-            int cardWidth = (flowStats.ClientSize.Width - totalGap) / 4 - 12;
-
+            int cardWidth = flowStats.ClientSize.Width / 4 - 12;
             foreach (Control ctrl in flowStats.Controls)
-            {
                 ctrl.Width = cardWidth;
-            }
         }
 
-        private void DodajStatKarticu(string naslov, string vrijednost, string promjena, Color boja)
+        private void DodajStatKarticu(string naslov, string vrijednost,
+                                       string ikona, Color boja, int index)
         {
             Guna2Panel card = new Guna2Panel();
             card.Height = 140;
@@ -107,11 +188,9 @@ namespace Trgovina.UserControls
             card.ShadowDecoration.Depth = 8;
             card.ShadowDecoration.Color = Color.FromArgb(20, 0, 0, 0);
 
-            // Accent bar na vrhu
             Guna2Panel accent = new Guna2Panel();
             accent.Dock = DockStyle.Top;
             accent.Height = 4;
-            accent.Location = new Point(0, 0);
             accent.FillColor = boja;
             card.Controls.Add(accent);
 
@@ -130,20 +209,21 @@ namespace Trgovina.UserControls
             lblVrijednost.Location = new Point(15, 48);
             lblVrijednost.AutoSize = true;
             card.Controls.Add(lblVrijednost);
+            _lblVrijednosti[index] = lblVrijednost;
 
-            Label lblPromjena = new Label();
-            lblPromjena.Text = promjena;
-            lblPromjena.Font = AppFonts.Regular;
-            lblPromjena.ForeColor = boja;
-            lblPromjena.Location = new Point(15, 98);
-            lblPromjena.AutoSize = true;
-            card.Controls.Add(lblPromjena);
+            Label lblIkona = new Label();
+            lblIkona.Text = ikona;
+            lblIkona.Font = AppFonts.Regular;
+            lblIkona.ForeColor = boja;
+            lblIkona.Location = new Point(15, 98);
+            lblIkona.AutoSize = true;
+            card.Controls.Add(lblIkona);
 
             flowStats.Controls.Add(card);
         }
 
         // ══════════════════════════════════════════════════════════════════════════
-        //  DONJI PANELI (50% Nedavni računi | 50% Brze akcije)
+        //  DONJI PANELI
         // ══════════════════════════════════════════════════════════════════════════
 
         private void KreirajDonjePanele()
@@ -154,12 +234,11 @@ namespace Trgovina.UserControls
             pnlBottomContainer.Padding = new Padding(0, 8, 0, 0);
 
             pnlRecentOrders = KreirajNedavniRacuniPanel();
-            pnlQuickActions = KreirajBrzeAkcijePanel();
+            pnlGrafikon = KreirajGrafikonPanel();
 
             pnlBottomContainer.Controls.Add(pnlRecentOrders);
-            pnlBottomContainer.Controls.Add(pnlQuickActions);
+            pnlBottomContainer.Controls.Add(pnlGrafikon);
 
-            // Pozicioniraj 50/50 na SizeChanged
             pnlBottomContainer.SizeChanged += PozicionirajDonjePanele;
             pnlBottomContainer.Resize += PozicionirajDonjePanele;
 
@@ -169,17 +248,19 @@ namespace Trgovina.UserControls
         private void PozicionirajDonjePanele(object sender, EventArgs e)
         {
             int containerW = pnlBottomContainer.ClientSize.Width;
-            int containerH = pnlBottomContainer.ClientSize.Height - 8; // -8 zbog paddinga
+            int containerH = pnlBottomContainer.ClientSize.Height - 8;
+
+            // Guard — čekaj dok container ne dobije prave dimenzije
+            if (containerW <= 0 || containerH <= 0) return;
+
             int gap = 12;
             int halfW = (containerW - gap) / 2;
 
-            // Lijevi panel (Nedavni računi)
             pnlRecentOrders.Location = new Point(0, 8);
             pnlRecentOrders.Size = new Size(halfW, containerH);
 
-            // Desni panel (Brze akcije)
-            pnlQuickActions.Location = new Point(halfW + gap, 8);
-            pnlQuickActions.Size = new Size(halfW, containerH);
+            pnlGrafikon.Location = new Point(halfW + gap, 8);
+            pnlGrafikon.Size = new Size(halfW, containerH);
         }
 
         // ──────────────────────────────────────────────────────────────────────────
@@ -204,64 +285,50 @@ namespace Trgovina.UserControls
             lblNaslov.Height = 32;
             panel.Controls.Add(lblNaslov);
 
-            Guna2DataGridView dgv = new Guna2DataGridView();
-            dgv.Dock = DockStyle.Fill;
-            dgv.BackgroundColor = AppColors.CardBackground;
-            dgv.BorderStyle = BorderStyle.None;
-            dgv.CellBorderStyle = DataGridViewCellBorderStyle.SingleHorizontal;
-            dgv.ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.None;
-            dgv.GridColor = Color.FromArgb(230, 232, 240);
-            dgv.RowTemplate.Height = 34;
-            dgv.ColumnHeadersHeight = 38;
-            dgv.AllowUserToAddRows = false;
-            dgv.AllowUserToDeleteRows = false;
-            dgv.ReadOnly = true;
-            dgv.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            dgv.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
-            dgv.EnableHeadersVisualStyles = false;
+            _dgvRacuni = new Guna2DataGridView();
+            _dgvRacuni.Dock = DockStyle.Fill;
+            _dgvRacuni.BackgroundColor = AppColors.CardBackground;
+            _dgvRacuni.BorderStyle = BorderStyle.None;
+            _dgvRacuni.CellBorderStyle = DataGridViewCellBorderStyle.SingleHorizontal;
+            _dgvRacuni.ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.None;
+            _dgvRacuni.GridColor = Color.FromArgb(230, 232, 240);
+            _dgvRacuni.RowTemplate.Height = 34;
+            _dgvRacuni.ColumnHeadersHeight = 38;
+            _dgvRacuni.AllowUserToAddRows = false;
+            _dgvRacuni.AllowUserToDeleteRows = false;
+            _dgvRacuni.ReadOnly = true;
+            _dgvRacuni.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+            _dgvRacuni.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+            _dgvRacuni.EnableHeadersVisualStyles = false;
 
-            dgv.DefaultCellStyle.BackColor = AppColors.CardBackground;
-            dgv.DefaultCellStyle.ForeColor = AppColors.TextPrimary;
-            dgv.DefaultCellStyle.SelectionBackColor = AppColors.Primary;
-            dgv.DefaultCellStyle.SelectionForeColor = Color.White;
-            dgv.DefaultCellStyle.Font = AppFonts.Regular;
-            dgv.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(248, 249, 252);
+            _dgvRacuni.DefaultCellStyle.BackColor = AppColors.CardBackground;
+            _dgvRacuni.DefaultCellStyle.ForeColor = AppColors.TextPrimary;
+            _dgvRacuni.DefaultCellStyle.SelectionBackColor = AppColors.Primary;
+            _dgvRacuni.DefaultCellStyle.SelectionForeColor = Color.White;
+            _dgvRacuni.DefaultCellStyle.Font = AppFonts.Regular;
+            _dgvRacuni.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(248, 249, 252);
 
-            dgv.ColumnHeadersDefaultCellStyle.BackColor = AppColors.Secondary;
-            dgv.ColumnHeadersDefaultCellStyle.ForeColor = Color.White;
-            dgv.ColumnHeadersDefaultCellStyle.Font = AppFonts.RegularMedium;
+            _dgvRacuni.ColumnHeadersDefaultCellStyle.BackColor = AppColors.Secondary;
+            _dgvRacuni.ColumnHeadersDefaultCellStyle.ForeColor = Color.White;
+            _dgvRacuni.ColumnHeadersDefaultCellStyle.Font = AppFonts.RegularMedium;
 
-            dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "colBroj", HeaderText = "Broj", FillWeight = 70 });
-            dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "colPartner", HeaderText = "Partner", FillWeight = 130 });
-            dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "colIznos", HeaderText = "Iznos", FillWeight = 80 });
-            dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "colStatus", HeaderText = "Status", FillWeight = 70 });
+            _dgvRacuni.Columns.Add(new DataGridViewTextBoxColumn { Name = "colBroj", HeaderText = "Broj", FillWeight = 70 });
+            _dgvRacuni.Columns.Add(new DataGridViewTextBoxColumn { Name = "colPartner", HeaderText = "Partner", FillWeight = 130 });
+            _dgvRacuni.Columns.Add(new DataGridViewTextBoxColumn { Name = "colIznos", HeaderText = "Iznos", FillWeight = 80 });
+            _dgvRacuni.Columns.Add(new DataGridViewTextBoxColumn { Name = "colStatus", HeaderText = "Status", FillWeight = 70 });
 
-            dgv.Columns["colIznos"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
-            dgv.Columns["colStatus"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+            _dgvRacuni.Columns["colIznos"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
+            _dgvRacuni.Columns["colStatus"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
 
-            dgv.Rows.Add("R-2024-001", "ABC d.o.o.", "1.250,00 €", "✔ Plaćeno");
-            dgv.Rows.Add("R-2024-002", "XYZ trgovina", "890,00 €", "⏱ Čeka");
-            dgv.Rows.Add("R-2024-003", "Test firma", "2.100,00 €", "✔ Plaćeno");
-            dgv.Rows.Add("R-2024-004", "Klijent d.o.o.", "3.450,00 €", "✔ Plaćeno");
-            dgv.Rows.Add("R-2024-005", "Nova firma", "650,00 €", "⏱ Čeka");
-
-            foreach (DataGridViewRow row in dgv.Rows)
-            {
-                if (row.Cells["colStatus"].Value?.ToString().Contains("Plaćeno") == true)
-                    row.Cells["colStatus"].Style.ForeColor = Color.FromArgb(46, 213, 115);
-                else
-                    row.Cells["colStatus"].Style.ForeColor = Color.FromArgb(241, 196, 15);
-            }
-
-            panel.Controls.Add(dgv);
+            panel.Controls.Add(_dgvRacuni);
             return panel;
         }
 
         // ──────────────────────────────────────────────────────────────────────────
-        //  BRZE AKCIJE
+        //  GRAFIKON PRODAJE
         // ──────────────────────────────────────────────────────────────────────────
 
-        private Guna2Panel KreirajBrzeAkcijePanel()
+        private Guna2Panel KreirajGrafikonPanel()
         {
             Guna2Panel panel = new Guna2Panel();
             panel.FillColor = AppColors.CardBackground;
@@ -272,46 +339,63 @@ namespace Trgovina.UserControls
             panel.Padding = new Padding(15);
 
             Label lblNaslov = new Label();
-            lblNaslov.Text = "Brze akcije";
+            lblNaslov.Text = "📈  Prodaja — zadnjih 30 dana";
             lblNaslov.Font = AppFonts.TitleSmall;
             lblNaslov.ForeColor = AppColors.TextPrimary;
             lblNaslov.Dock = DockStyle.Top;
             lblNaslov.Height = 32;
             panel.Controls.Add(lblNaslov);
 
-            // Container za gumbe
-            Panel pnlButtons = new Panel();
-            pnlButtons.Dock = DockStyle.Fill;
-            pnlButtons.BackColor = AppColors.CardBackground;
-            pnlButtons.Padding = new Padding(0, 5, 0, 0);
+            _chartProdaja = new Chart();
+            _chartProdaja.Dock = DockStyle.Fill;
+            _chartProdaja.BackColor = AppColors.CardBackground;
+            _chartProdaja.BorderlineColor = Color.Transparent;
+            _chartProdaja.BorderlineDashStyle = ChartDashStyle.NotSet;
 
-            int y = 35;
-            DodajAkcijskiGumb(pnlButtons, "➕  Nova narudžba", AppColors.Primary, 0, y); y += 58;
-            DodajAkcijskiGumb(pnlButtons, "📦  Dodaj artikal", AppColors.Success, 0, y); y += 58;
-            DodajAkcijskiGumb(pnlButtons, "👤  Novi partner", AppColors.Primary, 0, y); y += 58;
-            DodajAkcijskiGumb(pnlButtons, "📊  Generiraj izvještaj", AppColors.Secondary, 0, y); y += 58;
-            DodajAkcijskiGumb(pnlButtons, "⚙️  Postavke sustava", AppColors.Secondary, 0, y);
+            // Chart area
+            ChartArea area = new ChartArea("Default");
+            area.BackColor = AppColors.CardBackground;
 
-            panel.Controls.Add(pnlButtons);
+            // X osa
+            area.AxisX.LabelStyle.Font = new Font("Segoe UI", 7f);
+            area.AxisX.LabelStyle.ForeColor = Color.FromArgb(120, 130, 150);
+            area.AxisX.LineColor = Color.FromArgb(220, 225, 235);
+            area.AxisX.MajorGrid.LineColor = Color.Transparent;
+            area.AxisX.MajorTickMark.Enabled = false;
+            area.AxisX.Interval = 5; // label svaki 5. dan
+
+            // Y osa
+            area.AxisY.LabelStyle.Font = new Font("Segoe UI", 7f);
+            area.AxisY.LabelStyle.ForeColor = Color.FromArgb(120, 130, 150);
+            area.AxisY.LineColor = Color.Transparent;
+            area.AxisY.MajorGrid.LineColor = Color.FromArgb(240, 242, 247);
+            area.AxisY.MajorGrid.LineDashStyle = ChartDashStyle.Dash;
+            area.AxisY.MajorTickMark.Enabled = false;
+            area.AxisY.LabelStyle.Format = "#,0";
+
+            area.InnerPlotPosition = new ElementPosition(8, 5, 90, 88);
+
+            _chartProdaja.ChartAreas.Add(area);
+
+            // Serija
+            Series series = new Series("Prodaja");
+            series.ChartType = SeriesChartType.Area;
+            series.Color = Color.FromArgb(80, 52, 152, 219);       // fill proziran
+            series.BorderColor = Color.FromArgb(52, 152, 219);     // linija
+            series.BorderWidth = 2;
+            series.XValueType = ChartValueType.DateTime;
+            series.IsValueShownAsLabel = false;
+            series.MarkerStyle = MarkerStyle.Circle;
+            series.MarkerSize = 4;
+            series.MarkerColor = Color.FromArgb(52, 152, 219);
+
+            _chartProdaja.Series.Add(series);
+
+            // Legend isključi
+            _chartProdaja.Legends.Clear();
+
+            panel.Controls.Add(_chartProdaja);
             return panel;
-        }
-
-        private void DodajAkcijskiGumb(Panel parent, string text, Color boja, int x, int y)
-        {
-            Guna2Button btn = new Guna2Button();
-            btn.Text = text;
-            btn.Size = new Size(parent.ClientSize.Width - 5, 50);
-            btn.Location = new Point(x, y);
-            btn.FillColor = boja;
-            btn.HoverState.FillColor = ControlPaint.Light(boja, 0.15f);
-            btn.Font = AppFonts.RegularMedium;
-            btn.ForeColor = AppColors.TextWhite;
-            btn.BorderRadius = 8;
-            btn.TextAlign = HorizontalAlignment.Left;
-            btn.Cursor = Cursors.Hand;
-            btn.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-
-            parent.Controls.Add(btn);
         }
     }
 }

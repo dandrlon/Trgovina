@@ -109,12 +109,12 @@ namespace Trgovina.UserControls
 
             btnTabTvrtka = KreirajTabGumb("🏢  Podaci tvrtke", 8);
             btnTabFiskal = KreirajTabGumb("📡  Fiskalizacija 1.0 (B2C)", 206);
-            btnTabEracun = KreirajTabGumb("📧  eRačun 2.0 (B2B)", 404);
-            btnTabInfo = KreirajTabGumb("ℹ️  Upute", 602);
+            //btnTabEracun = KreirajTabGumb("📧  eRačun 2.0 (B2B)", 404);
+            btnTabInfo = KreirajTabGumb("ℹ️  Upute", 404);
 
             btnTabTvrtka.Click += (s, e) => PrikaziTab(1);
             btnTabFiskal.Click += (s, e) => PrikaziTab(2);
-            btnTabEracun.Click += (s, e) => PrikaziTab(3);
+            //btnTabEracun.Click += (s, e) => PrikaziTab(3);
             btnTabInfo.Click += (s, e) => PrikaziTab(4);
 
             // ── Content panel ───────────────────────────────────────────────────────
@@ -158,7 +158,7 @@ namespace Trgovina.UserControls
         private void PrikaziTab(int tab)
         {
             // Reset svih tab gumbi
-            foreach (var btn in new[] { btnTabTvrtka, btnTabFiskal, btnTabEracun, btnTabInfo })
+            foreach (var btn in new[] { btnTabTvrtka, btnTabFiskal, btnTabInfo })
             {
                 btn.FillColor = Color.Transparent;
                 btn.ForeColor = AppColors.TextSecondary;
@@ -167,8 +167,7 @@ namespace Trgovina.UserControls
 
             // Aktivni tab
             Guna2Button aktivni = tab == 1 ? btnTabTvrtka :
-                                  tab == 2 ? btnTabFiskal :
-                                  tab == 3 ? btnTabEracun : btnTabInfo;
+                                  tab == 2 ? btnTabFiskal : btnTabInfo;
             aktivni.FillColor = AppColors.Primary;
             aktivni.ForeColor = Color.White;
             aktivni.Font = AppFonts.RegularMedium;

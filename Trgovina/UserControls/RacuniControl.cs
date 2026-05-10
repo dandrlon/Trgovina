@@ -471,15 +471,94 @@ namespace Trgovina.UserControls
             }
         }
 
-        private void BtnKnjizi_Click(object sender, EventArgs e)
+        private async void BtnKnjizi_Click(object sender, EventArgs e)
         {
             if (_odabrani == null || _odabrani.Proknjizeno) return;
+
             if (MessageBox.Show(
-                $"Proknjiži račun \"{_odabrani.BrojRacuna}\"?\n\nSkida artikle sa zalihe — ne može se poništiti!",
-                "Potvrda knjiženja", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
+                $"Proknjiži račun \"{_odabrani.BrojRacuna}\"?\n\nSkida artikle sa zalihe i šalje na fiskalizaciju — ne može se poništiti!",
+                "Potvrda knjiženja", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) != DialogResult.Yes)
+                return;
+
+            try
             {
-                try { RacuniRepository.ProkniziRacun(_odabrani.Id); UcitajRacune(); PrikaziPoruku("Proknjiženo. Zalihe ažurirane.", "Uspjeh"); }
-                catch (Exception ex) { PrikaziGresku(ex.Message); }
+                btnKnjizi.Enabled = false;
+                btnKnjizi.Text = "⏳  Knjižim...";
+
+                // 1. Proknjiži — skida zalihe
+                RacuniRepository.ProkniziRacun(_odabrani.Id);
+
+                // 2. Učitaj puni račun za fiskalizaciju
+                var racun = RacuniRepository.GetRacunById(_odabrani.Id);
+
+                // 3. Fiskalizacija
+                await IzvrsiFiskalizaciju(racun);
+
+                UcitajRacune();
+                PrikaziPoruku("Proknjiženo. Zalihe ažurirane.", "Uspjeh");
+            }
+            catch (Exception ex)
+            {
+                PrikaziGresku(ex.Message);
+            }
+            finally
+            {
+                btnKnjizi.Enabled = true;
+                btnKnjizi.Text = "📒  Proknjiži";
+            }
+        }
+
+        private async System.Threading.Tasks.Task IzvrsiFiskalizaciju(Racun r)
+        {
+            if (r.VrstaProdaje == "B2C")
+            {
+                btnKnjizi.Text = "📡  Šaljem na CIS...";
+
+                var rezultat = await FiskalizacijaService.FiskalizirajAsync(r);
+
+                if (rezultat.Uspjeh)
+                {
+                    RacuniRepository.SpremiJirZki(r.Id, rezultat.JIR, rezultat.ZKI, "FISKALIZIRAN", null);
+                    r.JIR = rezultat.JIR;
+                    r.ZKI = rezultat.ZKI;
+
+                    var pitanje = MessageBox.Show(
+                        $"✅ Račun uspješno fiskaliziran!\n\nJIR: {rezultat.JIR}\nZKI: {rezultat.ZKI}\n\nŽelite li ispisati/spremiti PDF?",
+                        "Fiskalizacija", MessageBoxButtons.YesNo, MessageBoxIcon.Information);
+
+                    if (pitanje == DialogResult.Yes)
+                        RacunPdfHelper.SpremiPdf(r);
+                }
+                else
+                {
+                    RacuniRepository.SpremiJirZki(r.Id, null, rezultat.ZKI, "GREŠKA", rezultat.Poruka);
+
+                    MessageBox.Show(
+                        $"⚠️ Proknjiženo, ali fiskalizacija nije uspjela:\n\n{rezultat.Poruka}\n\n" +
+                        $"ZKI je izračunat. Fiskalizaciju ponoviti u roku 48 sati!",
+                        "Greška fiskalizacije", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+            }
+            else // B2B
+            {
+                btnKnjizi.Text = "📧  Šaljem eRačun...";
+
+                var rezultat = await FiskalizacijaService.PosaljiEracunAsync(r);
+
+                if (rezultat.Uspjeh)
+                {
+                    RacuniRepository.SpremiEracunStatus(r.Id, "POSLANO", rezultat.EracunReferenca, null);
+                    MessageBox.Show(
+                        $"✅ eRačun uspješno poslan!\n\nReferenca: {rezultat.EracunReferenca}",
+                        "eRačun", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                else
+                {
+                    RacuniRepository.SpremiEracunStatus(r.Id, "GREŠKA", null, rezultat.Poruka);
+                    MessageBox.Show(
+                        $"⚠️ eRačun nije poslan:\n\n{rezultat.Poruka}",
+                        "eRačun — Greška", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
             }
         }
 

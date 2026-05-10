@@ -109,6 +109,7 @@
     </Reference>
     <Reference Include="System.Web" />
     <Reference Include="System.Web.Services" />
+    <Reference Include="System.Windows.Forms.DataVisualization" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -125,11 +126,13 @@
     <Compile Include="Cis\Fiscalization.cs" />
     <Compile Include="Cis\FiskalizacijaService.cs" />
     <Compile Include="Data\ArtikliRepository.cs" />
+    <Compile Include="Data\DashboardRepository.cs" />
     <Compile Include="Data\DatabaseHelper.cs" />
     <Compile Include="Data\GrupeArtikalaRepository.cs" />
     <Compile Include="Data\JediniceMjereRepository.cs" />
     <Compile Include="Data\KalkulacijaRepository.cs" />
     <Compile Include="Data\Models\Artikl.cs" />
+    <Compile Include="Data\Models\DashboardStats.cs" />
     <Compile Include="Data\Models\Kalkulacija.cs" />
     <Compile Include="Data\Models\Otpremnica.cs" />
     <Compile Include="Data\Models\Partner.cs" />

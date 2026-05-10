@@ -811,11 +811,11 @@ namespace Trgovina.Forms
                 if (_editMode) { r.Id = _racun.Id; RacuniRepository.AzurirajRacun(r); }
                 else { r.Id = RacuniRepository.DodajRacun(r); }
 
-                // ── Fiskalizacija ──────────────────────────────────────────
+                /* ── Fiskalizacija ──────────────────────────────────────────
                 if (!_editMode || string.IsNullOrEmpty(_racun?.JIR))
                 {
                     await IzvrsiFiskalizaciju(r);
-                }
+                }*/
 
                 DialogResult = System.Windows.Forms.DialogResult.OK;
                 Close();
