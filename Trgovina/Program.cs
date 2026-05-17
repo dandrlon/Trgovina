@@ -33,7 +33,7 @@ namespace Trgovina
                 return;
             }
 
-            Application.Run(new frmMain());
+            Application.Run(new frmLogin());
         }
     }
 }
